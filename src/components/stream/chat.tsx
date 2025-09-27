@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useWallet } from "@/hooks/useWallet"
 
 interface ChatMessage {
   id: string
@@ -63,8 +64,8 @@ const initialMessages: ChatMessage[] = [
 export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [newMessage, setNewMessage] = useState("")
-  const [isConnected, setIsConnected] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { isConnected, address, formatAddress, connectWallet } = useWallet()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -79,7 +80,7 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
 
     const message: ChatMessage = {
       id: Date.now().toString(),
-      username: "you",
+      username: address ? formatAddress(address) : "Anonymous",
       message: newMessage.trim(),
       timestamp: new Date(),
     }
@@ -154,7 +155,7 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
         <div className="border-t p-4">
           {!isConnected ? (
             <Button
-              onClick={() => setIsConnected(true)}
+              onClick={connectWallet}
               className="w-full"
               variant="outline"
             >

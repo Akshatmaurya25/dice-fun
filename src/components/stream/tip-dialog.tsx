@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useWallet } from "@/hooks/useWallet"
 
 interface TipDialogProps {
   streamer: {
@@ -17,15 +18,44 @@ interface TipDialogProps {
 export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
+  const [txHash, setTxHash] = useState<string | null>(null)
+  const { isConnected, sendTip, switchToPolygon, isPolygon, connectWallet } = useWallet()
 
   const handleTip = async () => {
     if (!amount || isNaN(Number(amount))) return
 
+    if (!isConnected) {
+      await connectWallet()
+      return
+    }
+
+    if (!isPolygon) {
+      await switchToPolygon()
+      return
+    }
+
     setLoading(true)
-    // Placeholder for tip functionality
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setLoading(false)
-    onClose()
+    setTxHash(null)
+
+    try {
+      const hash = await sendTip(streamer.address, amount)
+      if (hash) {
+        setTxHash(hash)
+        setAmount("")
+        // Show success state for 3 seconds then close
+        setTimeout(() => {
+          onClose()
+          setTxHash(null)
+        }, 3000)
+      } else {
+        alert("Transaction failed. Please try again.")
+      }
+    } catch (error) {
+      console.error("Tip failed:", error)
+      alert("Transaction failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!isOpen) return null
@@ -82,17 +112,46 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
             </Button>
           </div>
 
-          <Button
-            onClick={handleTip}
-            disabled={!amount || loading}
-            className="w-full"
-          >
-            {loading ? "Sending..." : "Send Tip"}
-          </Button>
+          {txHash ? (
+            <div className="text-center space-y-2">
+              <div className="text-green-600 font-medium">✅ Tip Sent Successfully!</div>
+              <div className="text-xs font-mono bg-muted p-2 rounded break-all">
+                {txHash}
+              </div>
+              <a
+                href={`https://polygonscan.com/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline text-xs"
+              >
+                View on PolygonScan →
+              </a>
+            </div>
+          ) : (
+            <>
+              <Button
+                onClick={handleTip}
+                disabled={!amount || loading}
+                className="w-full"
+              >
+                {loading
+                  ? "Processing..."
+                  : !isConnected
+                  ? "Connect Wallet"
+                  : !isPolygon
+                  ? "Switch to Polygon"
+                  : "Send Tip"}
+              </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            Tips are sent directly to the streamer&apos;s wallet using Polygon network.
-          </p>
+              <p className="text-xs text-muted-foreground text-center">
+                {!isConnected
+                  ? "Connect your wallet to send tips"
+                  : !isPolygon
+                  ? "Switch to Polygon network to send MATIC tips"
+                  : "Tips are sent directly to the streamer's wallet using Polygon network."}
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

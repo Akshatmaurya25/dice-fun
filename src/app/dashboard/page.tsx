@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-// Unused tabs imports removed as tabs are not used in this dashboard
+import { useWallet } from "@/hooks/useWallet"
+import { useStreaming } from "@/hooks/useStreaming"
+import { Input } from "@/components/ui/input"
 
 // Mock creator data
 const creatorData = {
@@ -65,16 +67,57 @@ const earningsData = [
 ]
 
 export default function DashboardPage() {
-  const [isStreaming, setIsStreaming] = useState(creatorData.currentStream.isLive)
-  const [streamTitle, setStreamTitle] = useState(creatorData.currentStream.title)
+  const [streamTitle, setStreamTitle] = useState("Building DeFi Apps on Kadena")
+  const [streamCategory, setStreamCategory] = useState("Technology")
+  const [showRTMPInfo, setShowRTMPInfo] = useState(false)
+  const [rtmpCredentials, setRtmpCredentials] = useState<{ rtmpUrl: string; streamKey: string } | null>(null)
 
-  const handleStartStream = () => {
-    setIsStreaming(true)
+  const { isConnected, connectWallet, address, formatAddress } = useWallet()
+  const {
+    isStreaming,
+    isLive,
+    viewers,
+    duration,
+    startTime,
+    isStarting,
+    isStopping,
+    startStream,
+    stopStream,
+    updateStreamInfo,
+    getStreamStats
+  } = useStreaming()
+
+  const handleStartStream = async () => {
+    if (!isConnected) {
+      await connectWallet()
+      return
+    }
+
+    if (!streamTitle.trim()) {
+      alert("Please enter a stream title")
+      return
+    }
+
+    const credentials = await startStream(streamTitle, streamCategory)
+    if (credentials) {
+      setRtmpCredentials(credentials)
+      setShowRTMPInfo(true)
+    }
   }
 
-  const handleStopStream = () => {
-    setIsStreaming(false)
+  const handleStopStream = async () => {
+    const success = await stopStream()
+    if (success) {
+      setShowRTMPInfo(false)
+      setRtmpCredentials(null)
+    }
   }
+
+  const handleUpdateStreamInfo = () => {
+    updateStreamInfo(streamTitle, streamCategory)
+  }
+
+  const streamStats = getStreamStats()
 
   const getSelfProtocolStatusBadge = () => {
     switch (creatorData.selfProtocolStatus) {
@@ -158,44 +201,92 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Stream Control
-                {isStreaming && (
-                  <Badge className="bg-red-500 hover:bg-red-600">🔴 LIVE</Badge>
-                )}
+                <div className="flex items-center space-x-2">
+                  {isStreaming && (
+                    <Badge className="bg-yellow-500">🔄 Streaming</Badge>
+                  )}
+                  {isLive && (
+                    <Badge className="bg-red-500 hover:bg-red-600">🔴 LIVE</Badge>
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isStreaming ? (
+              {!isConnected ? (
+                <div className="text-center space-y-4">
+                  <p className="text-muted-foreground">Connect your wallet to start streaming</p>
+                  <Button onClick={connectWallet} className="w-full">
+                    Connect Wallet
+                  </Button>
+                </div>
+              ) : isStreaming ? (
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-semibold mb-2">Currently Streaming</h3>
                     <p className="text-lg">{streamTitle}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Status: {isLive ? "Live" : "Connecting..."}
+                    </p>
                   </div>
+
+                  {/* RTMP Information */}
+                  {showRTMPInfo && rtmpCredentials && (
+                    <div className="bg-muted p-4 rounded-lg space-y-2">
+                      <h4 className="font-medium text-sm">RTMP Settings</h4>
+                      <div className="text-xs space-y-1">
+                        <div>
+                          <span className="font-medium">Server:</span>
+                          <div className="font-mono bg-background p-1 rounded mt-1 break-all">
+                            {rtmpCredentials.rtmpUrl}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-medium">Stream Key:</span>
+                          <div className="font-mono bg-background p-1 rounded mt-1 break-all">
+                            {rtmpCredentials.streamKey}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`Server: ${rtmpCredentials.rtmpUrl}\nStream Key: ${rtmpCredentials.streamKey}`)
+                          alert("RTMP settings copied to clipboard!")
+                        }}
+                      >
+                        Copy Settings
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-primary">
-                        {creatorData.currentStream.viewers}
+                        {viewers}
                       </div>
                       <div className="text-sm text-muted-foreground">Viewers</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-primary">
-                        {creatorData.currentStream.duration}
+                        {duration}
                       </div>
                       <div className="text-sm text-muted-foreground">Duration</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-primary">
-                        {creatorData.currentStream.earnings} MATIC
+                        {streamStats.bitrate}
                       </div>
-                      <div className="text-sm text-muted-foreground">Tips</div>
+                      <div className="text-sm text-muted-foreground">Bitrate</div>
                     </div>
                   </div>
                   <Button
                     onClick={handleStopStream}
                     variant="destructive"
                     className="w-full"
+                    disabled={isStopping}
                   >
-                    Stop Stream
+                    {isStopping ? "Stopping..." : "Stop Stream"}
                   </Button>
                 </div>
               ) : (
@@ -204,19 +295,36 @@ export default function DashboardPage() {
                     <label className="text-sm font-medium mb-2 block">
                       Stream Title
                     </label>
-                    <input
+                    <Input
                       value={streamTitle}
                       onChange={(e) => setStreamTitle(e.target.value)}
-                      className="w-full px-3 py-2 border border-input rounded-md"
                       placeholder="Enter stream title..."
                     />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Category
+                    </label>
+                    <select
+                      value={streamCategory}
+                      onChange={(e) => setStreamCategory(e.target.value)}
+                      className="w-full px-3 py-2 border border-input rounded-md text-sm"
+                    >
+                      <option value="Technology">Technology</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Education">Education</option>
+                      <option value="Gaming">Gaming</option>
+                      <option value="Art">Art</option>
+                      <option value="Music">Music</option>
+                    </select>
                   </div>
                   <Button
                     onClick={handleStartStream}
                     className="w-full"
                     size="lg"
+                    disabled={isStarting}
                   >
-                    🎬 Start Streaming
+                    {isStarting ? "Starting..." : "🎬 Start Streaming"}
                   </Button>
                 </div>
               )}
