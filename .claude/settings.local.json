@@ -15,7 +15,8 @@
       "Bash(findstr:*)",
       "Bash(cmd /c:*)",
       "Bash(pact:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx hardhat:*)"
     ],
     "deny": [],
     "ask": []

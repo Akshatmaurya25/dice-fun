@@ -6,10 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "compile": "hardhat compile",
+    "deploy:kadena": "hardhat run scripts/deploy.js --network kadenaEVMTestnet",
+    "deploy:kadena21": "hardhat run scripts/deploy.js --network kadenaEVMTestnet21",
+    "deploy:kadena22": "hardhat run scripts/deploy.js --network kadenaEVMTestnet22",
+    "contract:verify": "hardhat verify --network kadenaEVMTestnet",
+    "hardhat:help": "hardhat help"
   },
   "dependencies": {
     "@kadena/client": "^1.18.2",
+    "@openzeppelin/contracts": "^5.4.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
