@@ -16,7 +16,12 @@
       "Bash(cmd /c:*)",
       "Bash(pact:*)",
       "Bash(node:*)",
-      "Bash(npx hardhat:*)"
+      "Bash(npx hardhat:*)",
+      "Bash(rm:*)",
+      "Bash(forge init:*)",
+      "Bash(forge install:*)",
+      "Bash(forge:*)",
+      "Bash(source:*)"
     ],
     "deny": [],
     "ask": []
