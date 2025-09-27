@@ -54,7 +54,7 @@ export default function PrivyClientProvider({ children }: { children: React.Reac
           },
           metamask: {},
           walletConnect: {
-            projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'your-project-id',
+            projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'c7bbcb0e4153fb9581712573298cdc67',
           },
         },
       }}

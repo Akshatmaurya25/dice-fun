@@ -10,6 +10,7 @@ import { useStreaming } from "@/hooks/useStreaming"
 import { Input } from "@/components/ui/input"
 import { ServerStatus } from "@/components/stream/server-status"
 import { LiveStreams } from "@/components/stream/live-streams"
+import { WalletConnectManager } from "@/components/wallet/walletconnect-manager"
 
 // Mock creator data
 const creatorData = {
@@ -410,6 +411,9 @@ export default function DashboardPage() {
 
           {/* Live Streams */}
           <LiveStreams />
+
+          {/* WalletConnect Manager */}
+          <WalletConnectManager />
 
           {/* Profile Status */}
           <Card>

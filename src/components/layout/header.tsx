@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { usePrivyWallet } from "@/hooks/usePrivyWallet"
+import { useWalletConnect } from "@/hooks/useWalletConnect"
 
 export function Header() {
   const {
@@ -20,6 +21,8 @@ export function Header() {
     hasEmbeddedWallet,
     walletCount
   } = usePrivyWallet()
+
+  const { isInitialized: wcInitialized, sessionCount } = useWalletConnect()
 
   const handleWalletAction = async () => {
     if (isConnected) {
@@ -88,6 +91,11 @@ export function Header() {
                 {walletCount > 1 && (
                   <Badge variant="secondary" className="text-xs">
                     {walletCount} wallets
+                  </Badge>
+                )}
+                {wcInitialized && sessionCount > 0 && (
+                  <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200">
+                    🔗 {sessionCount} dApp{sessionCount !== 1 ? 's' : ''}
                   </Badge>
                 )}
               </div>
