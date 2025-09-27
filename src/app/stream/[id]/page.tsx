@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,15 +44,15 @@ const getStreamData = (id: string) => {
 }
 
 export default function StreamPage({ params }: { params: Promise<{ id: string }> }) {
-  const [streamId, setStreamId] = React.useState<string>("")
+  const [streamId, setStreamId] = useState<string>("1")
+  const [showTipDialog, setShowTipDialog] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     params.then((p) => setStreamId(p.id))
   }, [params])
 
   const stream = getStreamData(streamId)
-  const [showTipDialog, setShowTipDialog] = useState(false)
-  const [isFollowing, setIsFollowing] = useState(false)
 
   const streamDuration = () => {
     const now = new Date()
