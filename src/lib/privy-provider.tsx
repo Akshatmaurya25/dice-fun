@@ -1,7 +1,6 @@
 'use client';
 
 import { PrivyProvider } from '@privy-io/react-auth';
-import { polygon } from 'viem/chains';
 
 export default function PrivyClientProvider({ children }: { children: React.ReactNode }) {
   return (
@@ -23,11 +22,11 @@ export default function PrivyClientProvider({ children }: { children: React.Reac
           },
         },
 
-        // Configure supported networks
-        supportedChains: [polygon],
+        // Configure supported networks - using chain ID directly
+        supportedChains: [137], // Polygon chain ID
 
         // Default chain
-        defaultChain: polygon,
+        defaultChain: 137, // Polygon chain ID
 
         // Login methods configuration
         loginMethods: [

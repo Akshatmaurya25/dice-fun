@@ -3,7 +3,6 @@
 import { Core } from "@walletconnect/core"
 import { WalletKit, WalletKitTypes } from "@reown/walletkit"
 import { buildApprovedNamespaces, getSdkError, populateAuthPayload, buildAuthObject } from "@walletconnect/utils"
-import { polygon } from "viem/chains"
 
 export interface WalletConnectState {
   isInitialized: boolean

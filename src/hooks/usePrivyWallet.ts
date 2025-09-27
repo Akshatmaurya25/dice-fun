@@ -2,7 +2,6 @@
 
 import { usePrivy, useWallets, useSendTransaction } from '@privy-io/react-auth'
 import { useEffect, useState } from 'react'
-import { polygon } from 'viem/chains'
 
 export interface PrivyWalletState {
   isConnected: boolean
@@ -48,7 +47,7 @@ export function usePrivyWallet() {
       isLoading: !ready,
       isReady: ready,
       address: activeWallet?.address || null,
-      chainId: polygon.id, // Default to Polygon
+      chainId: 137, // Default to Polygon
       user: user,
     })
   }, [ready, authenticated, user, wallets])
@@ -98,7 +97,7 @@ export function usePrivyWallet() {
       const txHash = await sendTx({
         to: toAddress as `0x${string}`,
         value: amountInWei,
-        chainId: polygon.id,
+        chainId: 137, // Polygon chain ID
       })
 
       return txHash?.transactionHash || null
