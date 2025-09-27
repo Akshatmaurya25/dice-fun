@@ -3,19 +3,23 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useWallet } from "@/hooks/useWallet"
+import { usePrivyWallet } from "@/hooks/usePrivyWallet"
 
 export function Header() {
   const {
     isConnected,
     address,
-    isConnecting,
+    isLoading,
     connectWallet,
     disconnectWallet,
     formatAddress,
-    isPolygon,
-    switchToPolygon
-  } = useWallet()
+    switchToPolygon,
+    user,
+    userEmail,
+    authMethod,
+    hasEmbeddedWallet,
+    walletCount
+  } = usePrivyWallet()
 
   const handleWalletAction = async () => {
     if (isConnected) {
@@ -66,28 +70,35 @@ export function Header() {
           <div className="flex items-center space-x-2">
             {isConnected && (
               <div className="flex items-center space-x-2">
-                {!isPolygon && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={switchToPolygon}
-                    className="text-orange-600 border-orange-600 hover:bg-orange-50"
-                  >
-                    Switch to Polygon
-                  </Button>
+                {userEmail && (
+                  <Badge variant="secondary" className="text-xs">
+                    {userEmail}
+                  </Badge>
                 )}
-                <Badge variant="outline" className="font-mono">
-                  {formatAddress(address!)}
-                </Badge>
+                {hasEmbeddedWallet && (
+                  <Badge variant="outline" className="text-xs bg-green-50 border-green-200">
+                    🔐 Smart Wallet
+                  </Badge>
+                )}
+                {address && (
+                  <Badge variant="outline" className="font-mono">
+                    {formatAddress(address)}
+                  </Badge>
+                )}
+                {walletCount > 1 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {walletCount} wallets
+                  </Badge>
+                )}
               </div>
             )}
             <Button
               variant={isConnected ? "outline" : "default"}
               size="sm"
               onClick={handleWalletAction}
-              disabled={isConnecting}
+              disabled={isLoading}
             >
-              {isConnecting ? "Connecting..." : isConnected ? "Disconnect" : "Connect Wallet"}
+              {isLoading ? "Loading..." : isConnected ? "Disconnect" : "Connect"}
             </Button>
           </div>
 

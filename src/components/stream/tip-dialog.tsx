@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useWallet } from "@/hooks/useWallet"
+import { usePrivyWallet } from "@/hooks/usePrivyWallet"
 
 interface TipDialogProps {
   streamer: {
@@ -19,7 +19,7 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
   const [txHash, setTxHash] = useState<string | null>(null)
-  const { isConnected, sendTip, switchToPolygon, isPolygon, connectWallet } = useWallet()
+  const { isConnected, sendTip, switchToPolygon, connectWallet } = usePrivyWallet()
 
   const handleTip = async () => {
     if (!amount || isNaN(Number(amount))) return
@@ -29,10 +29,7 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
       return
     }
 
-    if (!isPolygon) {
-      await switchToPolygon()
-      return
-    }
+    // Privy handles network switching automatically
 
     setLoading(true)
     setTxHash(null)
@@ -138,16 +135,12 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
                   ? "Processing..."
                   : !isConnected
                   ? "Connect Wallet"
-                  : !isPolygon
-                  ? "Switch to Polygon"
                   : "Send Tip"}
               </Button>
 
               <p className="text-xs text-muted-foreground text-center">
                 {!isConnected
-                  ? "Connect your wallet to send tips"
-                  : !isPolygon
-                  ? "Switch to Polygon network to send MATIC tips"
+                  ? "Connect your wallet to send tips via email, social login, or external wallet"
                   : "Tips are sent directly to the streamer's wallet using Polygon network."}
               </p>
             </>

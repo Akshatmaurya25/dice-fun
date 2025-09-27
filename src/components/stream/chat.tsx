@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useWallet } from "@/hooks/useWallet"
+import { usePrivyWallet } from "@/hooks/usePrivyWallet"
 
 interface ChatMessage {
   id: string
@@ -65,7 +65,7 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [newMessage, setNewMessage] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { isConnected, address, formatAddress, connectWallet } = useWallet()
+  const { isConnected, address, formatAddress, connectWallet, userEmail, user } = usePrivyWallet()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -80,7 +80,7 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
 
     const message: ChatMessage = {
       id: Date.now().toString(),
-      username: address ? formatAddress(address) : "Anonymous",
+      username: userEmail || (address ? formatAddress(address) : "Anonymous"),
       message: newMessage.trim(),
       timestamp: new Date(),
     }
@@ -159,7 +159,7 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
               className="w-full"
               variant="outline"
             >
-              Connect Wallet to Chat
+              Connect to Chat
             </Button>
           ) : (
             <div className="flex gap-2">

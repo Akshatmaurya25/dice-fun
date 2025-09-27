@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { useWallet } from "@/hooks/useWallet"
+import { usePrivyWallet } from "@/hooks/usePrivyWallet"
 import { useStreaming } from "@/hooks/useStreaming"
 import { Input } from "@/components/ui/input"
 import { ServerStatus } from "@/components/stream/server-status"
@@ -75,7 +75,7 @@ export default function DashboardPage() {
   const [rtmpCredentials, setRtmpCredentials] = useState<{ rtmpUrl: string; streamKey: string } | null>(null)
   const [serverOnline, setServerOnline] = useState(false)
 
-  const { isConnected, connectWallet, address, formatAddress } = useWallet()
+  const { isConnected, connectWallet, address, formatAddress, userEmail, hasEmbeddedWallet } = usePrivyWallet()
   const {
     isStreaming,
     isLive,
