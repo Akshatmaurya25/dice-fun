@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { TipDialog } from "@/components/stream/tip-dialog"
-import { WalletGuard } from "@/components/wallet/wallet-guard"
-import { useWalletConnect } from "@/hooks/useWalletConnect"
 import { useDiceTipping } from "@/hooks/useDiceTipping"
 
 const TEST_ADDRESS = "0x0B4C5faEAF50AdE33B6F8d4b4D5fFA63D1149B11"
@@ -17,9 +15,33 @@ export default function TestTipPage() {
   const [testAmount, setTestAmount] = useState("0.01")
   const [testMessage, setTestMessage] = useState("Test tip from the test page!")
   const [lastTxHash, setLastTxHash] = useState<string | null>(null)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
+  const [isConnecting, setIsConnecting] = useState(false)
 
-  const { address, formatAddress } = useWalletConnect()
-  const { sendTip, sendStreamTip, isLoading, error } = useDiceTipping()
+  const { sendTip, sendStreamTip, isLoading, error, connectWallet, isConnected, account } = useDiceTipping()
+
+  // Check connection status on mount
+  useEffect(() => {
+    if (isConnected && account) {
+      setWalletAddress(account)
+    }
+  }, [isConnected, account])
+
+  const formatAddress = (address: string): string => {
+    if (!address) return ''
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
+
+  const handleConnect = async () => {
+    setIsConnecting(true)
+    try {
+      await connectWallet()
+    } catch (error) {
+      console.error('Connection failed:', error)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
 
   const handleQuickTip = async () => {
     if (!testAmount || isNaN(Number(testAmount))) {
@@ -56,8 +78,7 @@ export default function TestTipPage() {
   }
 
   return (
-    <WalletGuard requireConnection={true} fallbackMessage="Connect your wallet to test tipping functionality">
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">🧪 Tip Testing Page</h1>
@@ -79,23 +100,41 @@ export default function TestTipPage() {
               </div>
             </div>
 
-            {address && (
+            {walletAddress && (
               <div>
                 <label className="text-sm font-medium mb-1 block">Your Wallet Address</label>
                 <Badge variant="outline" className="font-mono">
-                  {formatAddress(address)}
+                  {formatAddress(walletAddress)}
                 </Badge>
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* Connection Card */}
+        {!isConnected && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Connect Wallet</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Connect your wallet to test the tipping functionality
+              </p>
+              <Button onClick={handleConnect} disabled={isConnecting} className="w-full">
+                {isConnecting ? "Connecting..." : "Connect Wallet"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Test Controls */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Quick Tip Tests</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {isConnected && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Quick Tip Tests</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Amount (KDA)</label>

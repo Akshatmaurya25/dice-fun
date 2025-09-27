@@ -10,6 +10,7 @@ export async function GET() {
       },
       cache: 'no-store', // Always fetch fresh data
     })
+    console.log(response);
 
     if (!response.ok) {
       return NextResponse.json({ streams: [] })

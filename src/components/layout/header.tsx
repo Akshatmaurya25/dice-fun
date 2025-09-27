@@ -55,6 +55,13 @@ export function Header() {
           >
             Dashboard
           </Link>
+          <Link
+            href="/verify"
+            className="text-muted-foreground hover:text-foreground transition-colors flex items-center"
+          >
+            <span className="mr-1">🛡️</span>
+            Verify Identity
+          </Link>
           {isConnected && (
             <Link
               href="/profile"
