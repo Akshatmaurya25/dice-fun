@@ -233,7 +233,6 @@ export default function StreamPage({ params }: { params: Promise<{ id: string }>
       <TipDialog
         streamer={{
           name: stream.streamerName,
-          ensName: stream.streamerENS,
           address: stream.streamerAddress,
         }}
         streamId={stream.id}

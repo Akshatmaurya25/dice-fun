@@ -13,6 +13,8 @@ import { LiveStreams } from "@/components/stream/live-streams"
 import { WalletConnectManager } from "@/components/wallet/walletconnect-manager"
 import { WalletTest } from "@/components/test/wallet-test"
 import { ContractStats } from "@/components/contract/contract-stats"
+import { WalletGuard } from "@/components/wallet/wallet-guard"
+import { StreamConfigModal, StreamConfig } from "@/components/modals/stream-config-modal"
 
 // Mock creator data
 const creatorData = {
@@ -77,6 +79,7 @@ export default function DashboardPage() {
   const [showRTMPInfo, setShowRTMPInfo] = useState(false)
   const [rtmpCredentials, setRtmpCredentials] = useState<{ rtmpUrl: string; streamKey: string } | null>(null)
   const [serverOnline, setServerOnline] = useState(false)
+  const [showStreamConfigModal, setShowStreamConfigModal] = useState(false)
 
   const { isConnected, connectWallet, address, formatAddress, userEmail, hasEmbeddedWallet } = useWalletConnect()
   const {
@@ -104,15 +107,16 @@ export default function DashboardPage() {
       return
     }
 
-    if (!streamTitle.trim()) {
-      alert("Please enter a stream title")
-      return
-    }
+    // Show configuration modal instead of starting immediately
+    setShowStreamConfigModal(true)
+  }
 
-    const credentials = await startStream(streamTitle, streamCategory, address || undefined)
+  const handleStreamConfigured = async (config: StreamConfig) => {
+    const credentials = await startStream(config.title, streamCategory, address || undefined)
     if (credentials) {
       setRtmpCredentials(credentials)
       setShowRTMPInfo(true)
+      setStreamTitle(config.title)
     }
   }
 
@@ -144,7 +148,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <WalletGuard requireConnection={true} fallbackMessage="Connect your wallet to access the creator dashboard">
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Creator Dashboard</h1>
@@ -366,7 +371,7 @@ export default function DashboardPage() {
                     disabled={isStarting || !serverOnline}
                     variant={!serverOnline ? "secondary" : "default"}
                   >
-                    {isStarting ? "Starting..." : !serverOnline ? "⚠️ Server Offline" : "🎬 Start Streaming"}
+                    {isStarting ? "Starting..." : !serverOnline ? "⚠️ Server Offline" : "🎬 Configure & Start Stream"}
                   </Button>
                 </div>
               )}
@@ -525,6 +530,14 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Stream Configuration Modal */}
+      <StreamConfigModal
+        isOpen={showStreamConfigModal}
+        onClose={() => setShowStreamConfigModal(false)}
+        onStreamConfigured={handleStreamConfigured}
+      />
     </div>
+    </WalletGuard>
   )
 }
