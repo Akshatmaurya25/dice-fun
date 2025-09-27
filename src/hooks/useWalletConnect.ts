@@ -1,107 +1,83 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { WalletConnectService, WalletConnectState } from "@/lib/walletconnect"
-import { usePrivyWallet } from "@/hooks/usePrivyWallet"
+import { useState, useEffect } from 'react'
+import { WalletConnectWalletService, WalletConnectWalletState } from '@/lib/walletconnect-wallet'
 
 export function useWalletConnect() {
-  const { isConnected, address, user } = usePrivyWallet()
-  const [walletConnectState, setWalletConnectState] = useState<WalletConnectState>({
-    isInitialized: false,
-    activeSessions: [],
-    pendingRequests: [],
-    pairings: [],
+  const [state, setState] = useState<WalletConnectWalletState>({
+    isConnected: false,
+    isLoading: false,
+    isReady: false,
+    address: null,
+    chainId: null,
+    sessions: [],
   })
-  const [isInitializing, setIsInitializing] = useState(false)
 
-  // Initialize WalletConnect when user is connected
   useEffect(() => {
-    if (isConnected && address && !walletConnectState.isInitialized && !isInitializing) {
-      initializeWalletConnect()
-    }
-  }, [isConnected, address, walletConnectState.isInitialized, isInitializing])
+    const walletService = WalletConnectWalletService.getInstance()
 
-  // Subscribe to WalletConnect state changes
-  useEffect(() => {
-    const service = WalletConnectService.getInstance()
-    const unsubscribe = service.subscribe(setWalletConnectState)
+    // Initialize the service
+    walletService.initialize()
+
+    // Subscribe to state changes
+    const unsubscribe = walletService.subscribe(setState)
+
     return unsubscribe
   }, [])
 
-  const initializeWalletConnect = async () => {
-    if (!address) return
-
-    setIsInitializing(true)
-    try {
-      const service = WalletConnectService.getInstance()
-
-      // Create a sign message function using Privy
-      const signMessage = async (message: string): Promise<string> => {
-        // This would use Privy's signing functionality
-        // For now, return a mock signature
-        console.log("Signing message:", message)
-        return "0x" + "00".repeat(65) // Mock signature
-      }
-
-      await service.initialize(address, signMessage)
-    } catch (error) {
-      console.error("Failed to initialize WalletConnect:", error)
-    } finally {
-      setIsInitializing(false)
-    }
+  const connectWallet = async (): Promise<boolean> => {
+    const walletService = WalletConnectWalletService.getInstance()
+    return await walletService.connectWallet()
   }
 
-  const pairWithDApp = async (uri: string) => {
-    try {
-      const service = WalletConnectService.getInstance()
-      await service.pair(uri)
-    } catch (error) {
-      console.error("Failed to pair with dApp:", error)
-      throw error
-    }
+  const disconnectWallet = async (): Promise<void> => {
+    const walletService = WalletConnectWalletService.getInstance()
+    await walletService.disconnectWallet()
   }
 
-  const disconnectSession = async (topic: string) => {
-    try {
-      const service = WalletConnectService.getInstance()
-      await service.disconnectSession(topic)
-    } catch (error) {
-      console.error("Failed to disconnect session:", error)
-      throw error
-    }
+  const sendTip = async (toAddress: string, amount: string, streamId?: string, message?: string): Promise<string | null> => {
+    const walletService = WalletConnectWalletService.getInstance()
+    return await walletService.sendTip(toAddress, amount, streamId, message)
   }
 
-  const disconnectAllSessions = async () => {
-    try {
-      const service = WalletConnectService.getInstance()
-      const sessions = service.getActiveSessions()
+  const switchToPolygon = async (): Promise<boolean> => {
+    const walletService = WalletConnectWalletService.getInstance()
+    return await walletService.switchToPolygon()
+  }
 
-      await Promise.all(
-        Object.keys(sessions).map(topic => service.disconnectSession(topic))
-      )
-    } catch (error) {
-      console.error("Failed to disconnect all sessions:", error)
-      throw error
-    }
+  const pairWithDapp = async (uri: string): Promise<boolean> => {
+    const walletService = WalletConnectWalletService.getInstance()
+    return await walletService.pairWithDapp(uri)
+  }
+
+  const formatAddress = (address: string): string => {
+    const walletService = WalletConnectWalletService.getInstance()
+    return walletService.formatAddress(address)
   }
 
   return {
     // State
-    isInitialized: walletConnectState.isInitialized,
-    isInitializing,
-    activeSessions: walletConnectState.activeSessions,
-    pendingRequests: walletConnectState.pendingRequests,
-    pairings: walletConnectState.pairings,
-    sessionCount: walletConnectState.activeSessions.length,
+    isConnected: state.isConnected,
+    isLoading: state.isLoading,
+    isReady: state.isReady,
+    address: state.address,
+    chainId: state.chainId,
+    sessions: state.sessions,
 
     // Actions
-    pairWithDApp,
-    disconnectSession,
-    disconnectAllSessions,
-    initializeWalletConnect,
+    connectWallet,
+    disconnectWallet,
+    sendTip,
+    switchToPolygon,
+    pairWithDapp,
+    formatAddress,
 
-    // Computed
-    hasActiveSessions: walletConnectState.activeSessions.length > 0,
-    isReady: isConnected && walletConnectState.isInitialized,
+    // Helper properties
+    hasEmbeddedWallet: false, // WalletConnect doesn't have embedded wallets
+    hasExternalWallet: state.isConnected,
+    walletCount: state.isConnected ? 1 : 0,
+    userEmail: null, // WalletConnect doesn't provide email
+    userPhone: null, // WalletConnect doesn't provide phone
+    authMethod: 'wallet', // Always wallet-based authentication
   }
 }

@@ -9,15 +9,10 @@ import { useWalletConnect } from "@/hooks/useWalletConnect"
 
 export function WalletConnectManager() {
   const {
-    isInitialized,
-    isInitializing,
-    activeSessions,
-    sessionCount,
-    hasActiveSessions,
     isReady,
-    pairWithDApp,
-    disconnectSession,
-    disconnectAllSessions,
+    isLoading,
+    sessions,
+    pairWithDapp,
   } = useWalletConnect()
 
   const [pairingUri, setPairingUri] = useState("")
@@ -31,33 +26,13 @@ export function WalletConnectManager() {
 
     setIsPairing(true)
     try {
-      await pairWithDApp(pairingUri)
+      await pairWithDapp(pairingUri)
       setPairingUri("")
     } catch (error) {
       console.error("Pairing failed:", error)
       alert("Failed to connect to dApp. Please check the URI and try again.")
     } finally {
       setIsPairing(false)
-    }
-  }
-
-  const handleDisconnect = async (topic: string) => {
-    try {
-      await disconnectSession(topic)
-    } catch (error) {
-      console.error("Disconnect failed:", error)
-      alert("Failed to disconnect from dApp")
-    }
-  }
-
-  const handleDisconnectAll = async () => {
-    if (!confirm("Are you sure you want to disconnect from all dApps?")) return
-
-    try {
-      await disconnectAllSessions()
-    } catch (error) {
-      console.error("Disconnect all failed:", error)
-      alert("Failed to disconnect from all dApps")
     }
   }
 
@@ -75,19 +50,19 @@ export function WalletConnectManager() {
         <CardTitle className="flex items-center justify-between">
           WalletConnect
           <div className="flex items-center gap-2">
-            {isInitializing && (
+            {isLoading && (
               <Badge variant="secondary" className="text-xs">
                 Initializing...
               </Badge>
             )}
-            {isInitialized && (
+            {isReady && (
               <Badge className="bg-green-500 hover:bg-green-600 text-xs">
                 Ready
               </Badge>
             )}
-            {sessionCount > 0 && (
+            {sessions.length > 0 && (
               <Badge variant="outline" className="text-xs">
-                {sessionCount} connected
+                {sessions.length} connected
               </Badge>
             )}
           </div>
@@ -98,7 +73,7 @@ export function WalletConnectManager() {
         {!isReady ? (
           <div className="text-center py-4">
             <div className="text-muted-foreground text-sm">
-              {isInitializing ? "Initializing WalletConnect..." : "Connect your wallet to use WalletConnect"}
+              {isLoading ? "Initializing WalletConnect..." : "Connect your wallet to use WalletConnect"}
             </div>
           </div>
         ) : (
@@ -127,24 +102,14 @@ export function WalletConnectManager() {
             </div>
 
             {/* Active Sessions */}
-            {hasActiveSessions ? (
+            {sessions.length > 0 ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-sm">Connected dApps</h4>
-                  {sessionCount > 1 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDisconnectAll}
-                      className="text-xs"
-                    >
-                      Disconnect All
-                    </Button>
-                  )}
                 </div>
 
                 <div className="space-y-2">
-                  {activeSessions.map((session: any, index: number) => (
+                  {sessions.map((session: any, index: number) => (
                     <div
                       key={session.topic || index}
                       className="flex items-center justify-between p-3 border rounded-lg"
@@ -169,14 +134,6 @@ export function WalletConnectManager() {
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDisconnect(session.topic)}
-                        className="text-xs"
-                      >
-                        Disconnect
-                      </Button>
                     </div>
                   ))}
                 </div>

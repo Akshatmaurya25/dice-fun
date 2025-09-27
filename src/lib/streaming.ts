@@ -1,5 +1,7 @@
 "use client"
 
+import DatabaseService from '@/lib/database'
+
 export interface StreamState {
   isStreaming: boolean
   isLive: boolean
@@ -29,6 +31,14 @@ export class StreamingService {
   private durationInterval: NodeJS.Timeout | null = null
   private statusCheckInterval: NodeJS.Timeout | null = null
   private streamingServerUrl = 'http://localhost:9000'
+  private database: DatabaseService
+  private currentStreamId: string | null = null
+
+  constructor() {
+    this.database = DatabaseService.getInstance()
+    // Initialize with mock data for development
+    this.database.initializeMockData()
+  }
 
   static getInstance(): StreamingService {
     if (!StreamingService.instance) {
@@ -63,32 +73,54 @@ export class StreamingService {
     }
   }
 
-  async startStream(title: string, category: string = "Technology"): Promise<{ success: boolean; rtmpUrl?: string; streamKey?: string; error?: string }> {
+  async startStream(title: string, category: string = "Technology", streamerAddress?: string): Promise<{ success: boolean; rtmpUrl?: string; streamKey?: string; error?: string }> {
     try {
       if (this.state.isStreaming) {
         return { success: false, error: "Already streaming" }
       }
 
-      // Create stream in database via API
-      const response = await fetch(`${this.streamingServerUrl}/api/streams`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          category,
-          streamer_id: 'user123', // This would come from wallet/auth
-        }),
+      // Generate stream key and RTMP URL
+      const streamKey = `live_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const rtmpUrl = `rtmp://localhost:1935/live`
+
+      // Create stream record in database
+      const streamRecord = await this.database.createStream({
+        title,
+        category,
+        streamer_address: streamerAddress || 'unknown',
+        streamer_name: `Streamer ${streamerAddress?.slice(0, 6) || 'Unknown'}`,
+        stream_key: streamKey,
+        rtmp_url: rtmpUrl,
+        is_active: true,
+        is_live: false,
+        viewer_count: 0,
+        total_earnings: 0,
+        started_at: new Date(),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to create stream')
-      }
+      this.currentStreamId = streamRecord.id
 
-      const streamData = await response.json()
-      const streamKey = streamData.stream_key
-      const rtmpUrl = `rtmp://localhost:1935/live`
+      // Try to create stream in streaming server if available
+      try {
+        const response = await fetch(`${this.streamingServerUrl}/api/streams`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title,
+            category,
+            streamer_id: streamerAddress || 'user123',
+            stream_key: streamKey,
+          }),
+        })
+
+        if (!response.ok) {
+          console.warn('Streaming server not available, using fallback')
+        }
+      } catch (error) {
+        console.warn('Streaming server not available, using fallback mode')
+      }
 
       this.state = {
         ...this.state,
@@ -107,8 +139,10 @@ export class StreamingService {
         this.updateDuration()
       }, 1000)
 
-      // Start checking stream status
-      this.startStatusChecking(streamKey)
+      // Simulate going live after a few seconds
+      setTimeout(() => {
+        this.goLive()
+      }, 3000)
 
       this.notifyListeners()
 
@@ -125,18 +159,35 @@ export class StreamingService {
     }
   }
 
-  goLive() {
+  async goLive() {
     if (this.state.isStreaming) {
       this.state.isLive = true
       // Simulate some initial viewers
       this.state.viewers = Math.floor(Math.random() * 10) + 1
+
+      // Update database record
+      if (this.currentStreamId) {
+        await this.database.updateStream(this.currentStreamId, {
+          is_live: true,
+          viewer_count: this.state.viewers,
+        })
+      }
+
       this.notifyListeners()
 
       // Simulate viewer count changes
-      const viewerInterval = setInterval(() => {
+      const viewerInterval = setInterval(async () => {
         if (this.state.isLive) {
           const change = Math.floor(Math.random() * 6) - 2 // -2 to +3 viewers
           this.state.viewers = Math.max(0, this.state.viewers + change)
+
+          // Update database with new viewer count
+          if (this.currentStreamId) {
+            await this.database.updateStream(this.currentStreamId, {
+              viewer_count: this.state.viewers,
+            })
+          }
+
           this.notifyListeners()
         } else {
           clearInterval(viewerInterval)
@@ -160,6 +211,16 @@ export class StreamingService {
         } catch (error) {
           console.warn('Failed to notify server of stream stop:', error)
         }
+      }
+
+      // Update database record to mark stream as ended
+      if (this.currentStreamId) {
+        await this.database.updateStream(this.currentStreamId, {
+          is_active: false,
+          is_live: false,
+          ended_at: new Date(),
+        })
+        this.currentStreamId = null
       }
 
       // Clear intervals
@@ -266,5 +327,29 @@ export class StreamingService {
       bitrate: this.state.isLive ? `${1500 + Math.floor(Math.random() * 1000)} kbps` : "0 kbps",
       fps: this.state.isLive ? 30 : 0,
     }
+  }
+
+  async getActiveStreams() {
+    return await this.database.getActiveStreams()
+  }
+
+  async getStreamsByStreamer(streamerAddress: string) {
+    return await this.database.getStreamsByStreamer(streamerAddress)
+  }
+
+  async getStreamAnalytics(streamId: string) {
+    return await this.database.getStreamAnalytics(streamId)
+  }
+
+  async getStreamerStats(streamerAddress: string) {
+    return await this.database.getStreamerStats(streamerAddress)
+  }
+
+  async getTipsByStream(streamId: string) {
+    return await this.database.getTipsByStream(streamId)
+  }
+
+  getCurrentStreamId(): string | null {
+    return this.currentStreamId
   }
 }

@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { usePrivyWallet } from "@/hooks/usePrivyWallet"
+import { useWalletConnect } from "@/hooks/useWalletConnect"
 import { useStreaming } from "@/hooks/useStreaming"
 import { Input } from "@/components/ui/input"
 import { ServerStatus } from "@/components/stream/server-status"
 import { LiveStreams } from "@/components/stream/live-streams"
 import { WalletConnectManager } from "@/components/wallet/walletconnect-manager"
+import { WalletTest } from "@/components/test/wallet-test"
 
 // Mock creator data
 const creatorData = {
@@ -76,7 +77,7 @@ export default function DashboardPage() {
   const [rtmpCredentials, setRtmpCredentials] = useState<{ rtmpUrl: string; streamKey: string } | null>(null)
   const [serverOnline, setServerOnline] = useState(false)
 
-  const { isConnected, connectWallet, address, formatAddress, userEmail, hasEmbeddedWallet } = usePrivyWallet()
+  const { isConnected, connectWallet, address, formatAddress, userEmail, hasEmbeddedWallet } = useWalletConnect()
   const {
     isStreaming,
     isLive,
@@ -107,7 +108,7 @@ export default function DashboardPage() {
       return
     }
 
-    const credentials = await startStream(streamTitle, streamCategory)
+    const credentials = await startStream(streamTitle, streamCategory, address || undefined)
     if (credentials) {
       setRtmpCredentials(credentials)
       setShowRTMPInfo(true)
@@ -414,6 +415,9 @@ export default function DashboardPage() {
 
           {/* WalletConnect Manager */}
           <WalletConnectManager />
+
+          {/* Test Component */}
+          <WalletTest />
 
           {/* Profile Status */}
           <Card>

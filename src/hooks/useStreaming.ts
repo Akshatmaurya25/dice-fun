@@ -25,11 +25,11 @@ export function useStreaming() {
     return unsubscribe
   }, [])
 
-  const startStream = async (title: string, category: string = "Technology") => {
+  const startStream = async (title: string, category: string = "Technology", streamerAddress?: string) => {
     setIsStarting(true)
     try {
       const streamingService = StreamingService.getInstance()
-      const result = await streamingService.startStream(title, category)
+      const result = await streamingService.startStream(title, category, streamerAddress)
 
       if (!result.success) {
         alert(result.error || "Failed to start stream")
