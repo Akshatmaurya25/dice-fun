@@ -13,7 +13,9 @@
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(pact:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

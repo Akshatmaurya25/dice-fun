@@ -1,0 +1,29 @@
+{
+  "name": "dice-tipping-contract",
+  "version": "1.0.0",
+  "description": "Kadena smart contract for tipping and donations on Dice.fun",
+  "main": "deploy-tipping.js",
+  "scripts": {
+    "setup": "node setup-deployment.js",
+    "deploy": "node deploy-tipping.js",
+    "test": "node deploy-tipping.js --test",
+    "check-balance": "node setup-deployment.js --balance",
+    "fund-info": "node setup-deployment.js --fund-info"
+  },
+  "dependencies": {
+    "@kadena/client": "^1.11.2",
+    "@kadena/cryptography-utils": "^0.4.2"
+  },
+  "devDependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "kadena",
+    "pact",
+    "smart-contract",
+    "tipping",
+    "blockchain"
+  ],
+  "author": "Dice.fun",
+  "license": "MIT"
+}
