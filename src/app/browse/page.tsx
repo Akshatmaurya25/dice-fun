@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StreamCard } from "@/components/stream/stream-card"
+import { LiveStreams } from "@/components/stream/live-streams"
+import { ServerStatus } from "@/components/stream/server-status"
+import { StreamingService } from "@/lib/streaming"
 
 // Mock data for streams
 const allStreams = [
@@ -97,8 +100,50 @@ const categories = [
 export default function BrowsePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [serverStreams, setServerStreams] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [serverOnline, setServerOnline] = useState(false)
 
-  const filteredStreams = allStreams.filter((stream) => {
+  // Fetch streams from server
+  useEffect(() => {
+    const fetchStreams = async () => {
+      if (!serverOnline) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const streamingService = StreamingService.getInstance()
+        const streams = await streamingService.fetchActiveStreams()
+
+        // Convert server streams to the format expected by StreamCard
+        const convertedStreams = streams.map((stream: any) => ({
+          id: stream.id,
+          title: stream.title,
+          streamerName: stream.streamer_id,
+          streamerENS: stream.streamer_id + '.kda',
+          viewerCount: stream.viewer_count || 0,
+          thumbnail: "",
+          category: stream.category,
+          isLive: stream.is_active,
+          streamKey: stream.stream_key,
+        }))
+
+        setServerStreams(convertedStreams)
+      } catch (error) {
+        console.error('Failed to fetch streams:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStreams()
+  }, [serverOnline])
+
+  // Combine server streams with mock streams for demo
+  const allStreamsCombined = serverOnline ? [...serverStreams, ...allStreams] : allStreams
+
+  const filteredStreams = allStreamsCombined.filter((stream) => {
     const matchesSearch = stream.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          stream.streamerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (stream.streamerENS && stream.streamerENS.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -119,6 +164,11 @@ export default function BrowsePage() {
         <p className="text-muted-foreground text-lg">
           Explore professional content creators on the Kadena ecosystem
         </p>
+      </div>
+
+      {/* Server Status */}
+      <div className="mb-8">
+        <ServerStatus onServerStatusChange={setServerOnline} />
       </div>
 
       {/* Search */}

@@ -8,6 +8,8 @@ import { Progress } from "@/components/ui/progress"
 import { useWallet } from "@/hooks/useWallet"
 import { useStreaming } from "@/hooks/useStreaming"
 import { Input } from "@/components/ui/input"
+import { ServerStatus } from "@/components/stream/server-status"
+import { LiveStreams } from "@/components/stream/live-streams"
 
 // Mock creator data
 const creatorData = {
@@ -71,6 +73,7 @@ export default function DashboardPage() {
   const [streamCategory, setStreamCategory] = useState("Technology")
   const [showRTMPInfo, setShowRTMPInfo] = useState(false)
   const [rtmpCredentials, setRtmpCredentials] = useState<{ rtmpUrl: string; streamKey: string } | null>(null)
+  const [serverOnline, setServerOnline] = useState(false)
 
   const { isConnected, connectWallet, address, formatAddress } = useWallet()
   const {
@@ -88,6 +91,11 @@ export default function DashboardPage() {
   } = useStreaming()
 
   const handleStartStream = async () => {
+    if (!serverOnline) {
+      alert("Streaming server is offline. Please start the streaming server first.")
+      return
+    }
+
     if (!isConnected) {
       await connectWallet()
       return
@@ -322,9 +330,10 @@ export default function DashboardPage() {
                     onClick={handleStartStream}
                     className="w-full"
                     size="lg"
-                    disabled={isStarting}
+                    disabled={isStarting || !serverOnline}
+                    variant={!serverOnline ? "secondary" : "default"}
                   >
-                    {isStarting ? "Starting..." : "🎬 Start Streaming"}
+                    {isStarting ? "Starting..." : !serverOnline ? "⚠️ Server Offline" : "🎬 Start Streaming"}
                   </Button>
                 </div>
               )}
@@ -396,6 +405,12 @@ export default function DashboardPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Server Status */}
+          <ServerStatus onServerStatusChange={setServerOnline} />
+
+          {/* Live Streams */}
+          <LiveStreams />
+
           {/* Profile Status */}
           <Card>
             <CardHeader>

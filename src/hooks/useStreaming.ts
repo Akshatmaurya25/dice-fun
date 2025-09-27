@@ -53,7 +53,7 @@ export function useStreaming() {
     setIsStopping(true)
     try {
       const streamingService = StreamingService.getInstance()
-      const result = streamingService.stopStream()
+      const result = await streamingService.stopStream()
 
       if (!result.success) {
         alert(result.error || "Failed to stop stream")

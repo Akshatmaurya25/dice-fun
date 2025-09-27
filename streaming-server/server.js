@@ -346,6 +346,46 @@ nms.on('donePlay', (id, StreamPath, args) => {
 });
 
 // Express API routes
+// Create a new stream
+app.post('/api/streams', async (req, res) => {
+  try {
+    const { title, category, streamer_id } = req.body;
+
+    if (!title || !streamer_id) {
+      return res.status(400).json({ error: 'Title and streamer_id are required' });
+    }
+
+    const streamKey = generateStreamKey();
+
+    const { data: stream, error } = await supabase
+      .from('live_streams')
+      .insert([{
+        title,
+        category: category || 'Technology',
+        streamer_id,
+        stream_key: streamKey,
+        is_active: false,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      ...stream,
+      stream_key: streamKey,
+      rtmp_url: `rtmp://localhost:1935/live`,
+      message: 'Stream created successfully. Start streaming with OBS using the provided RTMP settings.'
+    });
+  } catch (error) {
+    console.error('Error creating stream:', error);
+    res.status(500).json({ error: 'Failed to create stream' });
+  }
+});
+
 app.get('/api/streams', async (req, res) => {
   try {
     const { data: streams, error } = await supabase
@@ -393,6 +433,30 @@ app.get('/api/streams/:streamKey', async (req, res) => {
   } catch (error) {
     console.error('Error fetching stream:', error);
     res.status(500).json({ error: 'Failed to fetch stream' });
+  }
+});
+
+// Stop a stream
+app.post('/api/streams/:streamKey/stop', async (req, res) => {
+  try {
+    const { streamKey } = req.params;
+
+    const { error } = await supabase
+      .from('live_streams')
+      .update({
+        is_active: false,
+        ended_at: new Date().toISOString()
+      })
+      .eq('stream_key', streamKey);
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ success: true, message: 'Stream stopped successfully' });
+  } catch (error) {
+    console.error('Error stopping stream:', error);
+    res.status(500).json({ error: 'Failed to stop stream' });
   }
 });
 

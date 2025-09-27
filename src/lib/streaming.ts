@@ -27,6 +27,8 @@ export class StreamingService {
   }
   private listeners: ((state: StreamState) => void)[] = []
   private durationInterval: NodeJS.Timeout | null = null
+  private statusCheckInterval: NodeJS.Timeout | null = null
+  private streamingServerUrl = 'http://localhost:9000'
 
   static getInstance(): StreamingService {
     if (!StreamingService.instance) {
@@ -67,9 +69,26 @@ export class StreamingService {
         return { success: false, error: "Already streaming" }
       }
 
-      // Generate RTMP credentials (in a real app, this would come from your streaming server)
-      const rtmpUrl = "rtmp://live.kadelive.com/live"
-      const streamKey = `live_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      // Create stream in database via API
+      const response = await fetch(`${this.streamingServerUrl}/api/streams`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          category,
+          streamer_id: 'user123', // This would come from wallet/auth
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create stream')
+      }
+
+      const streamData = await response.json()
+      const streamKey = streamData.stream_key
+      const rtmpUrl = `rtmp://localhost:1935/live`
 
       this.state = {
         ...this.state,
@@ -88,10 +107,8 @@ export class StreamingService {
         this.updateDuration()
       }, 1000)
 
-      // Simulate going live after a few seconds (in real app, this would be triggered by RTMP server)
-      setTimeout(() => {
-        this.goLive()
-      }, 3000)
+      // Start checking stream status
+      this.startStatusChecking(streamKey)
 
       this.notifyListeners()
 
@@ -128,16 +145,31 @@ export class StreamingService {
     }
   }
 
-  stopStream(): { success: boolean; error?: string } {
+  async stopStream(): Promise<{ success: boolean; error?: string }> {
     try {
       if (!this.state.isStreaming) {
         return { success: false, error: "Not currently streaming" }
       }
 
-      // Clear duration timer
+      // Stop stream on server if we have a stream key
+      if (this.state.streamKey) {
+        try {
+          await fetch(`${this.streamingServerUrl}/api/streams/${this.state.streamKey}/stop`, {
+            method: 'POST',
+          })
+        } catch (error) {
+          console.warn('Failed to notify server of stream stop:', error)
+        }
+      }
+
+      // Clear intervals
       if (this.durationInterval) {
         clearInterval(this.durationInterval)
         this.durationInterval = null
+      }
+      if (this.statusCheckInterval) {
+        clearInterval(this.statusCheckInterval)
+        this.statusCheckInterval = null
       }
 
       this.state = {
@@ -175,6 +207,55 @@ export class StreamingService {
   async checkRTMPConnection(): Promise<boolean> {
     // In a real app, this would ping your RTMP server
     return this.state.isStreaming
+  }
+
+  private startStatusChecking(streamKey: string) {
+    this.statusCheckInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${this.streamingServerUrl}/api/streams/${streamKey}/status`)
+        if (response.ok) {
+          const status = await response.json()
+
+          // Update state based on server status
+          const wasLive = this.state.isLive
+          this.state.isLive = status.isLive
+          this.state.viewers = status.viewerCount
+
+          // If just went live, notify listeners
+          if (!wasLive && status.isLive) {
+            console.log('🔴 Stream went live!')
+          }
+
+          this.notifyListeners()
+        }
+      } catch (error) {
+        console.warn('Failed to check stream status:', error)
+      }
+    }, 5000) // Check every 5 seconds
+  }
+
+  async fetchActiveStreams() {
+    try {
+      const response = await fetch(`${this.streamingServerUrl}/api/streams`)
+      if (response.ok) {
+        return await response.json()
+      }
+    } catch (error) {
+      console.warn('Failed to fetch active streams:', error)
+    }
+    return []
+  }
+
+  async getStreamDetails(streamKey: string) {
+    try {
+      const response = await fetch(`${this.streamingServerUrl}/api/streams/${streamKey}`)
+      if (response.ok) {
+        return await response.json()
+      }
+    } catch (error) {
+      console.warn('Failed to fetch stream details:', error)
+    }
+    return null
   }
 
   getStreamStats() {
