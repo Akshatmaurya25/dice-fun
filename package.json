@@ -22,6 +22,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
     "@reown/walletkit": "^1.2.11",
+    "@selfxyz/qrcode": "^1.0.11",
     "@walletconnect/core": "^2.21.9",
     "@walletconnect/utils": "^2.21.9",
     "class-variance-authority": "^0.7.1",
