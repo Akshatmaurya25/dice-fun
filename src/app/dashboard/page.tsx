@@ -270,6 +270,36 @@ export default function DashboardPage() {
                     </div>
                   )}
 
+                  {/* Stream View Link */}
+                  {rtmpCredentials && (
+                    <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg space-y-2">
+                      <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">Stream is Live!</h4>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Your stream is now available for viewers
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => window.open(`/stream/${rtmpCredentials.streamKey}`, '_blank')}
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          📺 View Live Stream
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const streamUrl = `${window.location.origin}/stream/${rtmpCredentials.streamKey}`
+                            navigator.clipboard.writeText(streamUrl)
+                            alert("Stream URL copied to clipboard!")
+                          }}
+                        >
+                          🔗 Copy URL
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-primary">

@@ -3,30 +3,28 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { usePrivyWallet } from "@/hooks/usePrivyWallet"
 import { useWalletConnect } from "@/hooks/useWalletConnect"
+import { useStreaming } from "@/hooks/useStreaming"
 
 export function Header() {
   const {
     isConnected,
-    address,
     isLoading,
+    address,
+    sessions,
     connectWallet,
     disconnectWallet,
     formatAddress,
-    switchToPolygon,
-    user,
     userEmail,
-    authMethod,
     hasEmbeddedWallet,
     walletCount
-  } = usePrivyWallet()
+  } = useWalletConnect()
 
-  const { isInitialized: wcInitialized, sessionCount } = useWalletConnect()
+  const { isStreaming, getCurrentStreamId } = useStreaming()
 
   const handleWalletAction = async () => {
     if (isConnected) {
-      disconnectWallet()
+      await disconnectWallet()
     } else {
       await connectWallet()
     }
@@ -93,9 +91,9 @@ export function Header() {
                     {walletCount} wallets
                   </Badge>
                 )}
-                {wcInitialized && sessionCount > 0 && (
+                {sessions.length > 0 && (
                   <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200">
-                    🔗 {sessionCount} dApp{sessionCount !== 1 ? 's' : ''}
+                    🔗 {sessions.length} dApp{sessions.length !== 1 ? 's' : ''}
                   </Badge>
                 )}
               </div>
@@ -111,11 +109,26 @@ export function Header() {
           </div>
 
           {/* Streaming Action */}
-          <Link href="/dashboard">
-            <Button size="sm">
-              {isConnected ? "Start Streaming" : "Dashboard"}
+          {isStreaming ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                const streamId = getCurrentStreamId()
+                if (streamId) {
+                  window.open(`/stream/${streamId}`, '_blank')
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 animate-pulse"
+            >
+              🔴 View Live Stream
             </Button>
-          </Link>
+          ) : (
+            <Link href="/dashboard">
+              <Button size="sm">
+                {isConnected ? "Start Streaming" : "Dashboard"}
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

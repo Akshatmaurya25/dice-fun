@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { usePrivyWallet } from "@/hooks/usePrivyWallet"
+import { useWalletConnect } from "@/hooks/useWalletConnect"
 
 interface ChatMessage {
   id: string
@@ -65,7 +65,7 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [newMessage, setNewMessage] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { isConnected, address, formatAddress, connectWallet, userEmail, user } = usePrivyWallet()
+  const { isConnected, address, formatAddress, connectWallet, userEmail } = useWalletConnect()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })

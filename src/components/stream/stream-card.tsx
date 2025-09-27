@@ -13,6 +13,7 @@ interface StreamCardProps {
     thumbnail: string
     category: string
     isLive: boolean
+    streamKey?: string
   }
 }
 
@@ -57,9 +58,9 @@ export function StreamCard({ stream }: StreamCardProps) {
             </Badge>
           </div>
 
-          <Link href={`/stream/${stream.id}`}>
+          <Link href={`/stream/${stream.streamKey || stream.id}`}>
             <Button variant="outline" size="sm" className="w-full mt-2">
-              Watch Stream
+              {stream.isLive ? "📺 Watch Live" : "📹 View VOD"}
             </Button>
           </Link>
         </div>

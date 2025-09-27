@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { usePrivyWallet } from "@/hooks/usePrivyWallet"
+import { useWalletConnect } from "@/hooks/useWalletConnect"
 
 interface TipDialogProps {
   streamer: {
@@ -19,7 +19,7 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
   const [txHash, setTxHash] = useState<string | null>(null)
-  const { isConnected, sendTip, switchToPolygon, connectWallet } = usePrivyWallet()
+  const { isConnected, sendTip, connectWallet } = useWalletConnect()
 
   const handleTip = async () => {
     if (!amount || isNaN(Number(amount))) return
@@ -29,7 +29,7 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
       return
     }
 
-    // Privy handles network switching automatically
+    // WalletConnect handles network switching automatically
 
     setLoading(true)
     setTxHash(null)

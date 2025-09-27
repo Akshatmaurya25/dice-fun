@@ -4,20 +4,18 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { StreamingService } from "@/lib/streaming"
 
 interface LiveStream {
-  id: string
-  title: string
-  category: string
-  streamer_id: string
-  stream_key: string
-  is_active: boolean
-  is_live?: boolean
-  viewer_count: number
-  started_at: string
-  hls_url?: string
-  rtmp_url?: string
+  streamKey: string
+  title?: string
+  category?: string
+  streamerId?: string
+  isActive: boolean
+  startTime?: string
+  viewUrl: string
+  hlsUrl: string
+  connectionId?: string
+  appName?: string
 }
 
 export function LiveStreams() {
@@ -30,10 +28,16 @@ export function LiveStreams() {
       setLoading(true)
       setError(null)
 
-      const streamingService = StreamingService.getInstance()
-      const streamsData = await streamingService.fetchActiveStreams()
+      const response = await fetch('/api/streams/live', {
+        cache: 'no-store'
+      })
 
-      setStreams(streamsData)
+      if (!response.ok) {
+        throw new Error('Failed to fetch streams')
+      }
+
+      const data = await response.json()
+      setStreams(data.streams || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch streams')
       console.error('Failed to fetch streams:', err)
@@ -50,7 +54,9 @@ export function LiveStreams() {
     return () => clearInterval(interval)
   }, [])
 
-  const formatDuration = (startedAt: string) => {
+  const formatDuration = (startedAt?: string) => {
+    if (!startedAt) return 'Just started'
+
     const start = new Date(startedAt)
     const now = new Date()
     const diff = now.getTime() - start.getTime()
@@ -66,7 +72,7 @@ export function LiveStreams() {
 
   const handleWatch = (stream: LiveStream) => {
     // Navigate to stream viewer page
-    window.location.href = `/stream/${stream.stream_key}`
+    window.location.href = stream.viewUrl
   }
 
   if (loading) {
@@ -126,17 +132,21 @@ export function LiveStreams() {
               <div key={stream.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="font-medium text-lg">{stream.title}</h3>
+                    <h3 className="font-medium text-lg">{stream.title || `Stream ${stream.streamKey.slice(-8)}`}</h3>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>by {stream.streamer_id}</span>
-                      <span>•</span>
-                      <Badge variant="outline" className="text-xs">
-                        {stream.category}
-                      </Badge>
+                      <span>Stream Key: {stream.streamKey}</span>
+                      {stream.category && (
+                        <>
+                          <span>•</span>
+                          <Badge variant="outline" className="text-xs">
+                            {stream.category}
+                          </Badge>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {stream.is_active && (
+                    {stream.isActive && (
                       <Badge className="bg-red-500 hover:bg-red-600">
                         🔴 LIVE
                       </Badge>
@@ -147,12 +157,12 @@ export function LiveStreams() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <span>👥</span>
-                      <span>{stream.viewer_count} viewers</span>
+                      <span>🔗</span>
+                      <span className="font-mono text-xs">{stream.connectionId || 'Active'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <span>⏱️</span>
-                      <span>{formatDuration(stream.started_at)}</span>
+                      <span>{formatDuration(stream.startTime)}</span>
                     </div>
                   </div>
 
@@ -162,7 +172,7 @@ export function LiveStreams() {
                       size="sm"
                       className="bg-primary hover:bg-primary/90"
                     >
-                      Watch
+                      📺 Watch Live
                     </Button>
                   </div>
                 </div>

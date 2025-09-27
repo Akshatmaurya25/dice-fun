@@ -7,7 +7,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StreamCard } from "@/components/stream/stream-card"
 import { LiveStreams } from "@/components/stream/live-streams"
 import { ServerStatus } from "@/components/stream/server-status"
-import { StreamingService } from "@/lib/streaming"
 
 // Mock data for streams
 const allStreams = [
@@ -107,38 +106,47 @@ export default function BrowsePage() {
   // Fetch streams from server
   useEffect(() => {
     const fetchStreams = async () => {
-      if (!serverOnline) {
-        setLoading(false)
-        return
-      }
-
       try {
-        const streamingService = StreamingService.getInstance()
-        const streams = await streamingService.fetchActiveStreams()
+        const response = await fetch('/api/streams/live', {
+          cache: 'no-store'
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch streams')
+        }
+
+        const data = await response.json()
+        const streams = data.streams || []
 
         // Convert server streams to the format expected by StreamCard
         const convertedStreams = streams.map((stream: any) => ({
-          id: stream.id,
-          title: stream.title,
-          streamerName: stream.streamer_id,
-          streamerENS: stream.streamer_id + '.kda',
-          viewerCount: stream.viewer_count || 0,
+          id: stream.streamKey,
+          title: stream.title || `Live Stream ${stream.streamKey.slice(-8)}`,
+          streamerName: stream.streamKey.slice(-12),
+          streamerENS: undefined,
+          viewerCount: Math.floor(Math.random() * 50) + 10, // Random for demo
           thumbnail: "",
-          category: stream.category,
-          isLive: stream.is_active,
-          streamKey: stream.stream_key,
+          category: stream.category || "Technology",
+          isLive: stream.isActive,
+          streamKey: stream.streamKey,
         }))
 
         setServerStreams(convertedStreams)
+        setServerOnline(streams.length > 0)
       } catch (error) {
         console.error('Failed to fetch streams:', error)
+        setServerOnline(false)
       } finally {
         setLoading(false)
       }
     }
 
     fetchStreams()
-  }, [serverOnline])
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchStreams, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Combine server streams with mock streams for demo
   const allStreamsCombined = serverOnline ? [...serverStreams, ...allStreams] : allStreams

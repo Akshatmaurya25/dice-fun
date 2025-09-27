@@ -80,6 +80,11 @@ export function useStreaming() {
     return streamingService.getStreamStats()
   }
 
+  const getCurrentStreamId = () => {
+    const streamingService = StreamingService.getInstance()
+    return streamingService.getCurrentStreamId()
+  }
+
   return {
     ...streamState,
     isStarting,
@@ -88,5 +93,6 @@ export function useStreaming() {
     stopStream,
     updateStreamInfo,
     getStreamStats,
+    getCurrentStreamId,
   }
 }

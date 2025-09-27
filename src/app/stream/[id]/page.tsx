@@ -6,41 +6,50 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Chat } from "@/components/stream/chat"
 import { TipDialog } from "@/components/stream/tip-dialog"
+import { HLSVideoPlayer } from "@/components/stream/hls-video-player"
 import Link from "next/link"
 
-// Mock stream data - in real app this would come from API
-const getStreamData = (id: string) => {
-  const streams = {
-    "1": {
-      id: "1",
-      title: "Building DeFi Apps on Kadena",
-      description: "In this stream, we'll walk through building a complete DeFi application on the Kadena blockchain. We'll cover smart contract development, frontend integration, and security best practices.",
-      streamerName: "CryptoDev",
-      streamerENS: "cryptodev.kda",
-      streamerAddress: "0x1234...5678",
-      viewerCount: 234,
-      category: "Technology",
-      isLive: true,
-      startedAt: new Date(Date.now() - 3600000), // 1 hour ago
-      followers: 1250,
-      totalEarnings: "45.6",
-    },
-    "2": {
-      id: "2",
-      title: "NFT Trading Strategies",
-      description: "Learn advanced NFT trading strategies and market analysis techniques for maximizing profits in the NFT space.",
-      streamerName: "TraderJoe",
-      streamerENS: undefined,
-      streamerAddress: "0xabcd...efgh",
-      viewerCount: 156,
-      category: "Finance",
-      isLive: true,
-      startedAt: new Date(Date.now() - 1800000), // 30 minutes ago
-      followers: 890,
-      totalEarnings: "23.4",
-    },
+function ViewerCount({ viewerCount }: { viewerCount: number }) {
+  const [isVisible, setIsVisible] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(false)
+    }, 5000) // Hide after 5 seconds
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (!isVisible) return null
+
+  return (
+    <div className="absolute top-4 right-4 transition-opacity duration-500">
+      <Badge variant="secondary" className="bg-black/60 text-white">
+        {viewerCount} watching
+      </Badge>
+    </div>
+  )
+}
+
+// Dynamic stream data - accepts any stream key
+const getStreamData = (streamKey: string) => {
+  // In a real app, this would fetch from API using the stream key
+  // For now, return dynamic data based on the stream key
+  return {
+    id: streamKey,
+    streamKey: streamKey,
+    title: `Live Stream - ${streamKey}`,
+    description: "Live streaming session in progress. Join the conversation!",
+    streamerName: "LiveStreamer",
+    streamerENS: undefined,
+    streamerAddress: "0x1234...5678",
+    viewerCount: Math.floor(Math.random() * 100) + 50,
+    category: "Technology",
+    isLive: true,
+    startedAt: new Date(Date.now() - Math.random() * 3600000), // Random start time within last hour
+    followers: Math.floor(Math.random() * 1000) + 500,
+    totalEarnings: (Math.random() * 50).toFixed(1),
   }
-  return streams[id as keyof typeof streams] || streams["1"]
 }
 
 export default function StreamPage({ params }: { params: Promise<{ id: string }> }) {
@@ -69,19 +78,27 @@ export default function StreamPage({ params }: { params: Promise<{ id: string }>
         {/* Main Content - Video Player and Info */}
         <div className="lg:col-span-3 space-y-6">
           {/* Video Player */}
-          <div className="aspect-video bg-black rounded-lg relative overflow-hidden">
-            {/* Placeholder for video player */}
-            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center">
-              <div className="text-center text-white">
-                <div className="text-6xl mb-4">📺</div>
-                <p className="text-xl">Live Stream Player</p>
-                <p className="text-sm opacity-75 mt-2">
-                  Video streaming integration would go here
-                </p>
+          <Card className="overflow-hidden">
+            <div className="aspect-video bg-black relative">
+              {stream.isLive ? (
+                <HLSVideoPlayer
+                  src={`http://localhost:9000/media/hls/${streamId}/index.m3u8`}
+                  streamKey={streamId}
+                  className="w-full h-full"
+                />
+              ) : (
+              <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center">
+                <div className="text-center text-white">
+                  <div className="text-6xl mb-4">📺</div>
+                  <p className="text-xl">Stream Offline</p>
+                  <p className="text-sm opacity-75 mt-2">
+                    This stream is currently offline
+                  </p>
+                </div>
               </div>
-            </div>
+              )}
 
-            {/* Live indicator */}
+              {/* Live indicator */}
             {stream.isLive && (
               <div className="absolute top-4 left-4">
                 <Badge className="bg-red-500 hover:bg-red-600">
@@ -90,12 +107,8 @@ export default function StreamPage({ params }: { params: Promise<{ id: string }>
               </div>
             )}
 
-            {/* Viewer count */}
-            <div className="absolute top-4 right-4">
-              <Badge variant="secondary" className="bg-black/60 text-white">
-                {stream.viewerCount} watching
-              </Badge>
-            </div>
+            {/* Viewer count - auto-hiding */}
+            <ViewerCount viewerCount={stream.viewerCount} />
 
             {/* Stream duration */}
             <div className="absolute bottom-4 left-4">
@@ -103,7 +116,8 @@ export default function StreamPage({ params }: { params: Promise<{ id: string }>
                 {streamDuration()}
               </Badge>
             </div>
-          </div>
+            </div>
+          </Card>
 
           {/* Stream Info */}
           <div className="space-y-4">

@@ -9,7 +9,11 @@
       "Bash(npm run build:*)",
       "Bash(npm run dev:*)",
       "Bash(pkill:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(cmd /c:*)"
     ],
     "deny": [],
     "ask": []
