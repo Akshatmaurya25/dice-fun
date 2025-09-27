@@ -202,45 +202,52 @@ export default function TestTipPage() {
           </CardContent>
         </Card>
 
+          </Card>
+        )}
+
         {/* Modal Test */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Modal Tip Test</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Test the tip dialog modal with the same recipient address
-            </p>
-            <Button onClick={() => setShowTipDialog(true)}>
-              🎯 Open Tip Dialog
-            </Button>
-          </CardContent>
-        </Card>
+        {isConnected && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Modal Tip Test</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Test the tip dialog modal with the same recipient address
+              </p>
+              <Button onClick={() => setShowTipDialog(true)}>
+                🎯 Open Tip Dialog
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Preset Amount Tests */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preset Amount Tests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {["0.001", "0.01", "0.1", "1"].map((amount) => (
-                <Button
-                  key={amount}
-                  variant="outline"
-                  onClick={() => {
-                    setTestAmount(amount)
-                    handleQuickTip()
-                  }}
-                  disabled={isLoading}
-                  size="sm"
-                >
-                  Tip {amount} KDA
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {isConnected && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Preset Amount Tests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {["0.001", "0.01", "0.1", "1"].map((amount) => (
+                  <Button
+                    key={amount}
+                    variant="outline"
+                    onClick={() => {
+                      setTestAmount(amount)
+                      handleQuickTip()
+                    }}
+                    disabled={isLoading}
+                    size="sm"
+                  >
+                    Tip {amount} KDA
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tip Dialog */}
         <TipDialog
@@ -253,6 +260,5 @@ export default function TestTipPage() {
           onClose={() => setShowTipDialog(false)}
         />
       </div>
-    </WalletGuard>
-  )
+    )
 }
