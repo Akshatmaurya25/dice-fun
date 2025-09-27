@@ -6,6 +6,7 @@ import {
   SelfQRcodeWrapper,
   SelfAppBuilder,
   type SelfApp,
+  countries,
 } from "@selfxyz/qrcode";
 import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
@@ -29,11 +30,12 @@ export function SelfVerificationQR({
   scope = "self-app",
   endpoint,
   userDefinedData = "Identity Verification",
+  
   disclosures = {
     minimumAge: 18,
     nationality: true,
     gender: true,
-    excludedCountries: ["IRN", "PRK", "RUS", "SYR"],
+    excludedCountries: [countries.CUBA, countries.IRAN, countries.NORTH_KOREA, countries.RUSSIA],
     ofac: true,
   },
   onSuccess,
@@ -54,6 +56,17 @@ export function SelfVerificationQR({
         const verificationEndpoint = endpoint || 
           `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || window.location.origin}/api/verify`;
 
+        console.log("Self.xyz config:", {
+          endpoint: verificationEndpoint,
+          NEXT_PUBLIC_SELF_ENDPOINT: process.env.NEXT_PUBLIC_SELF_ENDPOINT,
+          windowOrigin: typeof window !== 'undefined' ? window.location.origin : 'undefined'
+        });
+
+        // Validate that we're not using localhost
+        if (verificationEndpoint.includes('localhost') || verificationEndpoint.includes('127.0.0.1')) {
+          throw new Error('Self.xyz requires a public HTTPS endpoint. Please use ngrok or deploy to a staging environment. See SELF_INTEGRATION.md for setup instructions.');
+        }
+
         const app = new SelfAppBuilder({
           version: 2,
           appName,
@@ -61,7 +74,7 @@ export function SelfVerificationQR({
           endpoint: verificationEndpoint,
           logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
           userId,
-          endpointType: "staging_https",
+          endpointType: "staging_https", // Use "staging_https" for ngrok/custom HTTPS endpoints
           userIdType: "hex",
           userDefinedData,
           disclosures,
@@ -134,7 +147,13 @@ export function SelfVerificationQR({
         <SelfQRcodeWrapper
           selfApp={selfApp}
           onSuccess={handleSuccess}
-          onError={handleError}
+          onError={(data: { error_code?: string; reason?: string }) => {
+            const errorMsg = data.error_code || data.reason || "Verification failed";
+            console.log('REASON:', data.reason);
+            console.error("Self verification error:", errorMsg);
+            setError(errorMsg);
+            onError?.(errorMsg);
+          }}
         />
       </div>
       
