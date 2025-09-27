@@ -16,7 +16,9 @@
       "Bash(cmd /c:*)",
       "Bash(pact:*)",
       "Bash(node:*)",
-      "Bash(npx hardhat:*)"
+      "Bash(npx hardhat:*)",
+      "Bash(npm run compile:*)",
+      "Bash(npm run deploy:kadena:*)"
     ],
     "deny": [],
     "ask": []

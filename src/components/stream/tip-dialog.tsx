@@ -3,23 +3,31 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useWalletConnect } from "@/hooks/useWalletConnect"
+import { useDiceTipping } from "@/hooks/useDiceTipping"
+import { KADENA_EVM_NETWORKS } from "@/config/contracts"
 
 interface TipDialogProps {
   streamer: {
     name: string
-    ensName?: string
     address: string
   }
+  streamId?: string
   isOpen: boolean
   onClose: () => void
 }
 
-export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
+export function TipDialog({ streamer, streamId, isOpen, onClose }: TipDialogProps) {
   const [amount, setAmount] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState("")
   const [txHash, setTxHash] = useState<string | null>(null)
-  const { isConnected, sendTip, connectWallet } = useWalletConnect()
+  const {
+    isConnected,
+    isLoading,
+    error,
+    connectWallet,
+    sendTip,
+    sendStreamTip
+  } = useDiceTipping()
 
   const handleTip = async () => {
     if (!amount || isNaN(Number(amount))) return
@@ -29,29 +37,31 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
       return
     }
 
-    // WalletConnect handles network switching automatically
-
-    setLoading(true)
     setTxHash(null)
 
     try {
-      const hash = await sendTip(streamer.address, amount)
-      if (hash) {
-        setTxHash(hash)
+      let tx
+      if (streamId) {
+        // Send stream tip if streamId is provided
+        tx = await sendStreamTip(streamer.address, streamId, message || "Thanks for the great stream!", amount)
+      } else {
+        // Send regular tip
+        tx = await sendTip(streamer.address, message || "Thanks for being awesome!", amount)
+      }
+
+      if (tx) {
+        setTxHash(tx.hash)
         setAmount("")
-        // Show success state for 3 seconds then close
+        setMessage("")
+        // Show success state for 5 seconds then close
         setTimeout(() => {
           onClose()
           setTxHash(null)
-        }, 3000)
-      } else {
-        alert("Transaction failed. Please try again.")
+        }, 5000)
       }
     } catch (error) {
       console.error("Tip failed:", error)
-      alert("Transaction failed. Please try again.")
-    } finally {
-      setLoading(false)
+      // Error handling is done in the hook
     }
   }
 
@@ -62,7 +72,7 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
       <Card className="w-full max-w-md mx-4">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Support {streamer.ensName || streamer.name}
+            Support {streamer.name}
             <Button variant="ghost" size="sm" onClick={onClose}>
               ✕
             </Button>
@@ -71,7 +81,7 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
         <CardContent className="space-y-4">
           <div>
             <label htmlFor="tip-amount" className="text-sm font-medium mb-2 block">
-              Tip Amount (MATIC)
+              Tip Amount (KDA)
             </label>
             <input
               id="tip-amount"
@@ -80,8 +90,23 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="w-full px-3 py-2 border border-input rounded-md text-sm"
-              min="0"
-              step="0.01"
+              min="0.001"
+              step="0.001"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="tip-message" className="text-sm font-medium mb-2 block">
+              Message (optional)
+            </label>
+            <input
+              id="tip-message"
+              type="text"
+              placeholder="Thanks for the great content!"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full px-3 py-2 border border-input rounded-md text-sm"
+              maxLength={200}
             />
           </div>
 
@@ -89,23 +114,23 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setAmount("0.1")}
+              onClick={() => setAmount("0.01")}
             >
-              0.1 MATIC
+              0.01 KDA
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setAmount("0.5")}
+              onClick={() => setAmount("0.1")}
             >
-              0.5 MATIC
+              0.1 KDA
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setAmount("1")}
             >
-              1 MATIC
+              1 KDA
             </Button>
           </div>
 
@@ -116,32 +141,42 @@ export function TipDialog({ streamer, isOpen, onClose }: TipDialogProps) {
                 {txHash}
               </div>
               <a
-                href={`https://polygonscan.com/tx/${txHash}`}
+                href={`${KADENA_EVM_NETWORKS.testnet.blockExplorer}/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline text-xs"
               >
-                View on PolygonScan →
+                View on Kadena Explorer →
               </a>
             </div>
           ) : (
             <>
               <Button
                 onClick={handleTip}
-                disabled={!amount || loading}
+                disabled={!amount || isLoading}
                 className="w-full"
               >
-                {loading
+                {isLoading
                   ? "Processing..."
                   : !isConnected
                   ? "Connect Wallet"
+                  : streamId
+                  ? "Send Stream Tip"
                   : "Send Tip"}
               </Button>
 
+              {error && (
+                <div className="text-red-600 text-sm text-center p-2 bg-red-50 rounded">
+                  {error}
+                </div>
+              )}
+
               <p className="text-xs text-muted-foreground text-center">
                 {!isConnected
-                  ? "Connect your wallet to send tips via email, social login, or external wallet"
-                  : "Tips are sent directly to the streamer's wallet using Polygon network."}
+                  ? "Connect your wallet to send tips on Kadena EVM network"
+                  : streamId
+                  ? "Stream tips are recorded on-chain and sent directly to the streamer via Kadena EVM."
+                  : "Tips are sent directly to the recipient's wallet via Kadena EVM smart contract."}
               </p>
             </>
           )}

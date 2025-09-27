@@ -236,6 +236,7 @@ export default function StreamPage({ params }: { params: Promise<{ id: string }>
           ensName: stream.streamerENS,
           address: stream.streamerAddress,
         }}
+        streamId={stream.id}
         isOpen={showTipDialog}
         onClose={() => setShowTipDialog(false)}
       />

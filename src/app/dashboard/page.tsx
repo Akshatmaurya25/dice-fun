@@ -12,6 +12,7 @@ import { ServerStatus } from "@/components/stream/server-status"
 import { LiveStreams } from "@/components/stream/live-streams"
 import { WalletConnectManager } from "@/components/wallet/walletconnect-manager"
 import { WalletTest } from "@/components/test/wallet-test"
+import { ContractStats } from "@/components/contract/contract-stats"
 
 // Mock creator data
 const creatorData = {
@@ -498,6 +499,9 @@ export default function DashboardPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Contract Stats */}
+          <ContractStats />
 
           {/* Quick Actions */}
           <Card>

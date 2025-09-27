@@ -1,5 +1,5 @@
 {
-  "name": "somnia-streaming-server",
+  "name": "streaming-server",
   "version": "1.0.0",
   "description": "RTMP/HLS streaming server for Somnia DApp",
   "main": "server.js",

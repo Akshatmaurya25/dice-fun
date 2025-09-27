@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title DiceTipping
@@ -29,7 +29,7 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         uint256 amount,
         string message,
         uint256 timestamp,
-        bytes32 indexed tipId
+        bytes32 tipId
     );
 
     event Donation(
@@ -56,7 +56,7 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         string streamId;
     }
 
-    struct Donation {
+    struct DonationInfo {
         address from;
         address to;
         uint256 amount;
@@ -76,7 +76,7 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
 
     // State variables
     mapping(bytes32 => Tip) public tips;
-    mapping(bytes32 => Donation) public donations;
+    mapping(bytes32 => DonationInfo) public donations;
     mapping(address => UserStats) public userStats;
     mapping(string => bytes32[]) public streamTips; // streamId => tipIds
 
@@ -102,7 +102,7 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         _;
     }
 
-    constructor() {}
+    constructor() Ownable(msg.sender) {}
 
     /**
      * @dev Send a tip to another user
@@ -248,7 +248,7 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
             allDonationIds.length
         ));
 
-        donations[donationId] = Donation({
+        donations[donationId] = DonationInfo({
             from: msg.sender,
             to: _to,
             amount: msg.value,

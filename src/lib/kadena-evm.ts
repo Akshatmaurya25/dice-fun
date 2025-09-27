@@ -77,7 +77,7 @@ export interface DonationData {
 
 export class KadenaEVMService {
   private static instance: KadenaEVMService
-  private provider: ethers.providers.Web3Provider | null = null
+  private provider: ethers.BrowserProvider | null = null
   private contract: ethers.Contract | null = null
   private contractAddress: string = '' // Will be set after deployment
 
@@ -100,7 +100,7 @@ export class KadenaEVMService {
     }
 
     try {
-      this.provider = new ethers.providers.Web3Provider(window.ethereum)
+      this.provider = new ethers.BrowserProvider(window.ethereum)
       await this.ensureKadenaNetwork()
       this.initializeContract()
       return true
@@ -179,7 +179,7 @@ export class KadenaEVMService {
 
     try {
       const tx = await this.contract.sendTip(to, message, {
-        value: ethers.utils.parseEther(amount)
+        value: ethers.parseEther(amount)
       })
 
       await tx.wait()
@@ -197,7 +197,7 @@ export class KadenaEVMService {
 
     try {
       const tx = await this.contract.sendStreamTip(streamer, streamId, message, {
-        value: ethers.utils.parseEther(amount)
+        value: ethers.parseEther(amount)
       })
 
       await tx.wait()
@@ -215,7 +215,7 @@ export class KadenaEVMService {
 
     try {
       const tx = await this.contract.makeDonation(to, purpose, message, {
-        value: ethers.utils.parseEther(amount)
+        value: ethers.parseEther(amount)
       })
 
       await tx.wait()
@@ -232,10 +232,10 @@ export class KadenaEVMService {
     try {
       const stats = await this.contract.getUserStats(address)
       return {
-        totalTipsSent: ethers.utils.formatEther(stats.totalTipsSent),
-        totalTipsReceived: ethers.utils.formatEther(stats.totalTipsReceived),
-        totalDonationsSent: ethers.utils.formatEther(stats.totalDonationsSent),
-        totalDonationsReceived: ethers.utils.formatEther(stats.totalDonationsReceived),
+        totalTipsSent: ethers.formatEther(stats.totalTipsSent),
+        totalTipsReceived: ethers.formatEther(stats.totalTipsReceived),
+        totalDonationsSent: ethers.formatEther(stats.totalDonationsSent),
+        totalDonationsReceived: ethers.formatEther(stats.totalDonationsReceived),
         tipCount: stats.tipCount.toString(),
         donationCount: stats.donationCount.toString()
       }
@@ -271,8 +271,8 @@ export class KadenaEVMService {
 
       return {
         platformFeePercentage: platformFee.toNumber() / 100, // Convert basis points to percentage
-        minimumTipAmount: ethers.utils.formatEther(minTip),
-        minimumDonationAmount: ethers.utils.formatEther(minDonation),
+        minimumTipAmount: ethers.formatEther(minTip),
+        minimumDonationAmount: ethers.formatEther(minDonation),
         totalTips: totalTips.toNumber(),
         totalDonations: totalDonations.toNumber(),
         contractAddress: this.contractAddress
@@ -315,7 +315,7 @@ export class KadenaEVMService {
 
   isValidAddress(address: string): boolean {
     try {
-      ethers.utils.getAddress(address)
+      ethers.getAddress(address)
       return true
     } catch {
       return false
@@ -324,7 +324,7 @@ export class KadenaEVMService {
 
   parseEther(amount: string): string {
     try {
-      return ethers.utils.parseEther(amount).toString()
+      return ethers.parseEther(amount).toString()
     } catch {
       return '0'
     }
@@ -332,7 +332,7 @@ export class KadenaEVMService {
 
   formatEther(amount: string): string {
     try {
-      return ethers.utils.formatEther(amount)
+      return ethers.formatEther(amount)
     } catch {
       return '0'
     }

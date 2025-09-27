@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useWalletConnect } from "@/hooks/useWalletConnect"
+import { WalletGuard } from "@/components/wallet/wallet-guard"
 
 interface ChatMessage {
   id: string
@@ -76,11 +77,11 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
   }, [messages])
 
   const handleSendMessage = () => {
-    if (!newMessage.trim() || !isConnected) return
+    if (!newMessage.trim() || !isConnected || !address) return
 
     const message: ChatMessage = {
       id: Date.now().toString(),
-      username: userEmail || (address ? formatAddress(address) : "Anonymous"),
+      username: formatAddress(address),
       message: newMessage.trim(),
       timestamp: new Date(),
     }
@@ -153,30 +154,35 @@ export function Chat({ streamId: _streamId, streamerName: _streamerName }: ChatP
 
         {/* Chat Input */}
         <div className="border-t p-4">
-          {!isConnected ? (
+          {!isConnected || !address ? (
             <Button
               onClick={connectWallet}
               className="w-full"
               variant="outline"
             >
-              Connect to Chat
+              Connect Wallet to Chat
             </Button>
           ) : (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim()}
-                size="sm"
-              >
-                Send
-              </Button>
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">
+                Chatting as: {formatAddress(address)}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim()}
+                  size="sm"
+                >
+                  Send
+                </Button>
+              </div>
             </div>
           )}
         </div>
