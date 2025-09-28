@@ -6,19 +6,44 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useWalletConnect } from "@/hooks/useWalletConnect"
 
+interface WalletProvider {
+  isMetaMask?: boolean
+  isPhantom?: boolean
+  isCoinbaseWallet?: boolean
+}
+
+interface EthereumProvider {
+  isMetaMask?: boolean
+  isPhantom?: boolean
+  providers?: WalletProvider[]
+  request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>
+  on?: (event: string, callback: (data: unknown) => void) => void
+  send?: (method: string, params: unknown[]) => Promise<string[]>
+}
+
+interface WalletInfo {
+  hasEthereum?: boolean
+  isMetaMask?: boolean
+  isPhantom?: boolean
+  hasProviders?: boolean
+  providersCount?: number
+  providers?: WalletProvider[]
+}
+
 export default function WalletDebugPage() {
-  const [walletInfo, setWalletInfo] = useState<any>({})
+  const [walletInfo, setWalletInfo] = useState<WalletInfo>({})
   const wallet = useWalletConnect()
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const ethereum = (window as unknown as { ethereum?: EthereumProvider }).ethereum
       const info = {
-        hasEthereum: !!window.ethereum,
-        isMetaMask: !!window.ethereum?.isMetaMask,
-        isPhantom: !!window.ethereum?.isPhantom,
-        hasProviders: !!window.ethereum?.providers,
-        providersCount: window.ethereum?.providers?.length || 0,
-        providers: window.ethereum?.providers?.map((p: any) => ({
+        hasEthereum: !!ethereum,
+        isMetaMask: !!ethereum?.isMetaMask,
+        isPhantom: !!ethereum?.isPhantom,
+        hasProviders: !!ethereum?.providers,
+        providersCount: ethereum?.providers?.length || 0,
+        providers: ethereum?.providers?.map((p: WalletProvider) => ({
           isMetaMask: p.isMetaMask,
           isPhantom: p.isPhantom,
           isCoinbaseWallet: p.isCoinbaseWallet,
@@ -128,7 +153,7 @@ export default function WalletDebugPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {walletInfo.providers.map((provider: any, index: number) => (
+                {walletInfo.providers.map((provider: WalletProvider, index: number) => (
                   <div key={index} className="flex items-center justify-between p-3 border rounded">
                     <span>Provider {index + 1}</span>
                     <div className="flex gap-2">

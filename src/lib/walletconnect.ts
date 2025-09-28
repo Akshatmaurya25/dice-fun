@@ -1,14 +1,15 @@
 "use client"
 
 import { Core } from "@walletconnect/core"
-import { WalletKit, WalletKitTypes } from "@reown/walletkit"
+import { WalletKit } from "@reown/walletkit"
 import { buildApprovedNamespaces, getSdkError, populateAuthPayload, buildAuthObject } from "@walletconnect/utils"
+import { SessionStruct, SessionRequest, SessionProposal, TransactionRequest, NetworkParams } from '@/lib/types'
 
 export interface WalletConnectState {
   isInitialized: boolean
-  activeSessions: any[]
-  pendingRequests: any[]
-  pairings: any[]
+  activeSessions: SessionStruct[]
+  pendingRequests: SessionRequest[]
+  pairings: string[]
 }
 
 export class WalletConnectService {
@@ -90,7 +91,7 @@ export class WalletConnectService {
     this.walletKit.on("session_request_expire", this.onSessionRequestExpire.bind(this))
   }
 
-  private async onSessionProposal(proposal: WalletKitTypes.SessionProposal) {
+  private async onSessionProposal(proposal: SessionProposal) {
     console.log("📝 Session proposal received:", proposal)
 
     try {
@@ -149,7 +150,7 @@ export class WalletConnectService {
     const method = request.method
 
     try {
-      let result: any
+      let result: unknown
 
       switch (method) {
         case "personal_sign":
@@ -206,7 +207,7 @@ export class WalletConnectService {
     }
   }
 
-  private async onSessionAuthenticate(payload: any) {
+  private async onSessionAuthenticate(payload: { id: number; params: { authPayload: any } }) {
     console.log("🔐 Session authenticate received:", payload)
 
     try {
@@ -266,24 +267,24 @@ export class WalletConnectService {
     }
   }
 
-  private async onSessionDelete(event: any) {
+  private async onSessionDelete(event: { topic: string }) {
     console.log("🗑️ Session deleted:", event)
     this.updateActiveSessions()
     this.showNotification("🔌 App disconnected", "info")
   }
 
-  private onProposalExpire(event: any) {
+  private onProposalExpire(event: { id: number }) {
     console.log("⏰ Proposal expired:", event)
     this.showNotification("⏰ Connection request expired", "warning")
   }
 
-  private onSessionRequestExpire(event: any) {
+  private onSessionRequestExpire(event: { id: number }) {
     console.log("⏰ Session request expired:", event)
     this.showNotification("⏰ Request expired", "warning")
   }
 
   // Handler methods for different request types
-  private async handlePersonalSign(params: any[]): Promise<string> {
+  private async handlePersonalSign(params: [string, string]): Promise<string> {
     const [message, address] = params
     if (!this.signMessageCallback) {
       throw new Error("Sign message callback not set")
@@ -296,24 +297,24 @@ export class WalletConnectService {
     return await this.signMessageCallback(messageToSign)
   }
 
-  private async handleEthSign(params: any[]): Promise<string> {
+  private async handleEthSign(params: [string, string]): Promise<string> {
     const [address, message] = params
     return await this.handlePersonalSign([message, address])
   }
 
-  private async handleSignTypedData(params: any[]): Promise<string> {
+  private async handleSignTypedData(params: [string, string]): Promise<string> {
     const [address, typedData] = params
     // For now, convert typed data to string and sign
     const message = typeof typedData === "string" ? typedData : JSON.stringify(typedData)
     return await this.handlePersonalSign([message, address])
   }
 
-  private async handleSendTransaction(params: any[]): Promise<string> {
+  private async handleSendTransaction(params: [TransactionRequest]): Promise<string> {
     // This would integrate with your transaction sending logic
     throw new Error("Transaction sending not implemented yet")
   }
 
-  private async handleSwitchChain(params: any[]): Promise<null> {
+  private async handleSwitchChain(params: [NetworkParams]): Promise<null> {
     // For now, we only support Polygon
     const [{ chainId }] = params
     if (chainId !== "0x89") {
@@ -322,7 +323,7 @@ export class WalletConnectService {
     return null
   }
 
-  private async handleAddChain(params: any[]): Promise<null> {
+  private async handleAddChain(params: [NetworkParams]): Promise<null> {
     // Auto-reject chain addition for security
     throw new Error("Adding new chains is not supported")
   }

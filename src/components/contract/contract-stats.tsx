@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useDiceTipping } from '@/hooks/useDiceTipping';
 import { formatEther } from 'ethers';
+import { UserStats } from '@/lib/types';
 
 interface ContractInfo {
   platformFeePercentage: number;
@@ -16,7 +17,7 @@ interface ContractInfo {
 
 export function ContractStats() {
   const [contractInfo, setContractInfo] = useState<ContractInfo | null>(null);
-  const [userStats, setUserStats] = useState<any>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const { getContractInfo, getUserStats, account, isConnected } = useDiceTipping();
 
   useEffect(() => {

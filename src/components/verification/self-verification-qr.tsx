@@ -162,8 +162,8 @@ export function SelfVerificationQR({
           <p className="text-sm text-gray-600 text-center">
             Or open directly in the Self app:
           </p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             onClick={() => window.open(universalLink, '_blank')}
           >
@@ -171,7 +171,7 @@ export function SelfVerificationQR({
             Open in Self App
           </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,11 @@
 "use client"
 
 import { ethers } from "ethers"
+import { EthereumProvider, WalletError, ChainParams } from '@/lib/types'
 
 declare global {
   interface Window {
-    ethereum?: any
+    ethereum?: EthereumProvider
   }
 }
 
@@ -26,7 +27,7 @@ export class MetaMaskAdapter {
     chainId: null,
   }
   private listeners: ((state: MetaMaskState) => void)[] = []
-  private provider: any = null
+  private provider: EthereumProvider | null = null
   private ethersProvider: ethers.BrowserProvider | null = null
 
   static getInstance(): MetaMaskAdapter {
@@ -94,7 +95,7 @@ export class MetaMaskAdapter {
 
     // Method 1: Direct MetaMask detection via providers array
     if (window.ethereum?.providers && Array.isArray(window.ethereum.providers)) {
-      const metamask = window.ethereum.providers.find((provider: any) => {
+      const metamask = window.ethereum.providers.find((provider: EthereumProvider) => {
         return provider.isMetaMask && !provider.isPhantom && !provider.isCoinbaseWallet
       })
       if (metamask) {
@@ -114,7 +115,7 @@ export class MetaMaskAdapter {
       // Try to specifically request MetaMask
       try {
         if (window.ethereum.providers) {
-          const metamask = window.ethereum.providers.find((p: any) => p.isMetaMask)
+          const metamask = window.ethereum.providers.find((p: EthereumProvider) => p.isMetaMask)
           if (metamask) {
             console.log('🦊 MetaMask: Forced selection from providers')
             return metamask
@@ -170,8 +171,9 @@ export class MetaMaskAdapter {
       }
 
       return false
-    } catch (error: any) {
-      console.error('❌ MetaMask: Connection failed:', error)
+    } catch (error: unknown) {
+      const walletError = error as WalletError;
+      console.error('❌ MetaMask: Connection failed:', walletError)
       return false
     } finally {
       this.state.isLoading = false
@@ -199,8 +201,9 @@ export class MetaMaskAdapter {
         params: [{ chainId: '0x1720' }], // Kadena Chainweb EVM Testnet (5920)
       })
       return true
-    } catch (switchError: any) {
-      if (switchError.code === 4902) {
+    } catch (switchError: unknown) {
+      const walletError = switchError as WalletError;
+      if (walletError.code === 4902) {
         try {
           await this.provider.request({
             method: 'wallet_addEthereumChain',

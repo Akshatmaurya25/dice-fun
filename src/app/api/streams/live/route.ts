@@ -19,7 +19,7 @@ export async function GET() {
     const data = await response.json()
 
     // Transform the data to include view URLs
-    const streamsWithUrls = (data.streams || []).map((stream: any) => ({
+    const streamsWithUrls = (data.streams || []).map((stream: { streamKey?: string }) => ({
       ...stream,
       viewUrl: `/stream/${stream.streamKey}`,
       hlsUrl: `http://localhost:9000/media/hls/${stream.streamKey}/index.m3u8`,

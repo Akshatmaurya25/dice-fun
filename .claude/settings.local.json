@@ -21,7 +21,9 @@
       "Bash(forge init:*)",
       "Bash(forge install:*)",
       "Bash(forge:*)",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(npx next:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

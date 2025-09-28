@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-// import { SelfBackendVerifier, AllIds, DefaultConfigStore } from "@selfxyz/core";
+ import { SelfBackendVerifier, AllIds, DefaultConfigStore } from "@selfxyz/core";
 
 // Reuse a single verifier instance
 const selfBackendVerifier = new SelfBackendVerifier(

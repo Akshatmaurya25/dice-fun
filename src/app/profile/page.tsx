@@ -122,8 +122,9 @@ export default function ProfilePage() {
         console.error('Filecoin avatar upload failed:', result.error)
       }
 
-    } catch (error: any) {
-      setAvatarUploadProgress(`❌ Upload error: ${error.message}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setAvatarUploadProgress(`❌ Upload error: ${errorMessage}`)
       console.error('Avatar upload error:', error)
     } finally {
       setIsUploadingAvatar(false)
@@ -284,7 +285,7 @@ export default function ProfilePage() {
                       ) : (
                         <div className="text-sm bg-muted p-2 rounded">
                           <div className="font-medium">{profile.name}</div>
-                          <div className="text-xs text-muted-foreground">aka "{profile.nickname}"</div>
+                          <div className="text-xs text-muted-foreground">aka &quot;{profile.nickname}&quot;</div>
                         </div>
                       )}
                     </div>

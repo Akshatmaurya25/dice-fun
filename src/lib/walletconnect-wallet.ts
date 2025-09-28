@@ -1,10 +1,11 @@
 "use client"
 
 import { Core } from "@walletconnect/core"
-import { WalletKit, WalletKitTypes } from "@reown/walletkit"
+import { WalletKit } from "@reown/walletkit"
 import { buildApprovedNamespaces, getSdkError } from "@walletconnect/utils"
 import { ethers } from "ethers"
 import DatabaseService from '@/lib/database'
+import { EthereumProvider, WalletError, TransactionRequest, SessionRequest, SessionStruct } from '@/lib/types'
 
 export interface WalletConnectWalletState {
   isConnected: boolean
@@ -12,7 +13,7 @@ export interface WalletConnectWalletState {
   isReady: boolean
   address: string | null
   chainId: number | null
-  sessions: WalletKitTypes.SessionTypes.Struct[]
+  sessions: SessionStruct[]
 }
 
 export class WalletConnectWalletService {
@@ -28,7 +29,7 @@ export class WalletConnectWalletService {
     sessions: [],
   }
   private listeners: ((state: WalletConnectWalletState) => void)[] = []
-  private ethereum: any = null
+  private ethereum: EthereumProvider | null = null
   private provider: ethers.BrowserProvider | null = null
   private database: DatabaseService
   private boundAccountsChanged: (accounts: string[]) => void
@@ -136,7 +137,7 @@ export class WalletConnectWalletService {
     // Check for multiple providers
     if (window.ethereum.providers && Array.isArray(window.ethereum.providers)) {
       console.log('🔍 Multiple providers detected, looking for MetaMask...')
-      const metamask = window.ethereum.providers.find((provider: any) => provider.isMetaMask)
+      const metamask = window.ethereum.providers.find((provider: EthereumProvider) => provider.isMetaMask)
       if (metamask) {
         console.log('🦊 MetaMask found in providers array')
         return metamask
@@ -236,7 +237,7 @@ export class WalletConnectWalletService {
     this.walletKit.on('session_authenticate', this.onSessionAuthenticate.bind(this))
   }
 
-  private async onSessionProposal(proposal: WalletKitTypes.SessionProposal): Promise<void> {
+  private async onSessionProposal(proposal: { id: number; params: { requiredNamespaces: Record<string, any>; optionalNamespaces: Record<string, any>; relays: { protocol: string; data?: string }[]; proposer: { publicKey: string; metadata: any } } }): Promise<void> {
     try {
       if (!this.state.address) {
         // Auto-reject if no wallet connected
@@ -274,7 +275,8 @@ export class WalletConnectWalletService {
       })
 
       if (session) {
-        this.state.sessions = this.walletKit?.getActiveSessions() ? Object.values(this.walletKit.getActiveSessions()) : []
+        const sessions = this.walletKit?.getActiveSessions()
+        this.state.sessions = sessions ? Object.values(sessions).map(session => ({ ...session })) : []
         this.notifyListeners()
       }
 
@@ -287,12 +289,12 @@ export class WalletConnectWalletService {
     }
   }
 
-  private async onSessionRequest(event: WalletKitTypes.SessionRequest): Promise<void> {
+  private async onSessionRequest(event: { topic: string; params: { request: { method: string; params?: unknown[] }; chainId: string; expiry: number; requester: any }; id: number }): Promise<void> {
     const { topic, params, id } = event
     const { request } = params
 
     try {
-      let result: any
+      let result: unknown
 
       switch (request.method) {
         case 'personal_sign':
@@ -337,11 +339,12 @@ export class WalletConnectWalletService {
   }
 
   private async onSessionDelete(event: { topic: string }): Promise<void> {
-    this.state.sessions = this.walletKit?.getActiveSessions() ? Object.values(this.walletKit.getActiveSessions()) : []
+    const sessions = this.walletKit?.getActiveSessions()
+    this.state.sessions = sessions ? Object.values(sessions).map(session => ({ ...session })) : []
     this.notifyListeners()
   }
 
-  private async onSessionAuthenticate(payload: any): Promise<void> {
+  private async onSessionAuthenticate(payload: { id: number; params: { authPayload: any } }): Promise<void> {
     // Handle authentication requests
     console.log('Authentication request received:', payload)
     // For now, auto-reject auth requests
@@ -351,7 +354,7 @@ export class WalletConnectWalletService {
     })
   }
 
-  private async handlePersonalSign(params: any[]): Promise<string> {
+  private async handlePersonalSign(params: [string, string]): Promise<string> {
     if (!this.provider) throw new Error('No provider available')
 
     const [message, address] = params
@@ -359,7 +362,7 @@ export class WalletConnectWalletService {
     return await signer.signMessage(ethers.toUtf8String(message))
   }
 
-  private async handleSendTransaction(transaction: any): Promise<string> {
+  private async handleSendTransaction(transaction: TransactionRequest): Promise<string> {
     if (!this.provider) throw new Error('No provider available')
 
     const signer = await this.provider.getSigner()
@@ -367,7 +370,7 @@ export class WalletConnectWalletService {
     return tx.hash
   }
 
-  private async handleSignTypedData(params: any[]): Promise<string> {
+  private async handleSignTypedData(params: [string, string]): Promise<string> {
     if (!this.provider) throw new Error('No provider available')
 
     const [address, typedData] = params
@@ -551,9 +554,10 @@ export class WalletConnectWalletService {
         params: [{ chainId: '0x89' }], // Polygon chain ID
       })
       return true
-    } catch (switchError: any) {
+    } catch (switchError: unknown) {
       // This error code indicates that the chain has not been added to MetaMask
-      if (switchError.code === 4902) {
+      const walletError = switchError as WalletError;
+      if (walletError.code === 4902) {
         try {
           await this.ethereum.request({
             method: 'wallet_addEthereumChain',
@@ -651,7 +655,7 @@ export class WalletConnectWalletService {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-  getSessions(): WalletKitTypes.SessionTypes.Struct[] {
+  getSessions(): SessionStruct[] {
     return this.state.sessions
   }
 }

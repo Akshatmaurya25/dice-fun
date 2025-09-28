@@ -1,6 +1,7 @@
 "use client"
 
 import { ethers } from "ethers"
+import { EthereumProvider, WalletError, ChainParams } from '@/lib/types'
 
 export interface SimpleWalletState {
   isConnected: boolean
@@ -20,7 +21,7 @@ export class SimpleWalletService {
     chainId: null,
   }
   private listeners: ((state: SimpleWalletState) => void)[] = []
-  private ethereum: any = null
+  private ethereum: EthereumProvider | null = null
   private provider: ethers.BrowserProvider | null = null
 
   static getInstance(): SimpleWalletService {
@@ -99,7 +100,7 @@ export class SimpleWalletService {
       console.log('🔍 SimpleWallet: Scanning providers for MetaMask...')
 
       // Find MetaMask specifically in providers array
-      const metamask = window.ethereum.providers.find((provider: any) =>
+      const metamask = window.ethereum.providers.find((provider: EthereumProvider) =>
         provider.isMetaMask && !provider.isPhantom
       )
 
@@ -116,15 +117,15 @@ export class SimpleWalletService {
     }
 
     // Direct access to MetaMask if available
-    if ((window as any).ethereum?.isMetaMask) {
+    if (window.ethereum?.isMetaMask) {
       console.log('✅ SimpleWallet: MetaMask found via direct access')
-      return (window as any).ethereum
+      return window.ethereum
     }
 
     // Try to access MetaMask via global window property
-    if ((window as any).MetaMask) {
+    if (window.MetaMask) {
       console.log('✅ SimpleWallet: MetaMask found via global property')
-      return (window as any).MetaMask
+      return window.MetaMask
     }
 
     console.log('❌ SimpleWallet: MetaMask not detected')
@@ -183,15 +184,16 @@ export class SimpleWalletService {
       }
 
       return false
-    } catch (error: any) {
-      console.error('❌ SimpleWallet: Connection failed:', error)
+    } catch (error: unknown) {
+      const walletError = error as WalletError;
+      console.error('❌ SimpleWallet: Connection failed:', walletError)
 
-      if (error.code === 4001) {
+      if (walletError.code === 4001) {
         alert('MetaMask connection was rejected. Please approve the connection to continue.')
-      } else if (error.message?.includes('User rejected')) {
+      } else if (walletError.message?.includes('User rejected')) {
         alert('Connection rejected. Please approve the connection in MetaMask.')
       } else {
-        alert(`Failed to connect to MetaMask: ${error.message || 'Unknown error'}`)
+        alert(`Failed to connect to MetaMask: ${walletError.message || 'Unknown error'}`)
       }
 
       return false
@@ -221,8 +223,9 @@ export class SimpleWalletService {
         params: [{ chainId: '0x89' }], // Polygon
       })
       return true
-    } catch (switchError: any) {
-      if (switchError.code === 4902) {
+    } catch (switchError: unknown) {
+      const walletError = switchError as WalletError;
+      if (walletError.code === 4902) {
         try {
           await this.ethereum.request({
             method: 'wallet_addEthereumChain',
