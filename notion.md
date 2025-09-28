@@ -165,6 +165,10 @@ Built on **Kadena blockchain** because we're not here to play games with gas fee
 1. User uploads file → 2. File processed → 3. PieceCID generated
     ↓                      ↓                    ↓
 4. Stored on Filecoin → 5. Replicated → 6. Permanent access URL
+
+Dual Network Architecture:
+💰 Payments & Tips: Kadena Chainweb EVM (zero gas fees)
+📁 File Storage: Filecoin Calibration (decentralized storage)
 ```
 
 #### **Unique Benefits:**

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 
 export function Footer() {
   return (
@@ -7,14 +8,18 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-sm"></div>
-              </div>
-              <span className="text-lg font-semibold">KadeLive</span>
+            <div className="flex items-center space-x-3">
+              <Image
+                src="/logo.svg"
+                alt="dice.fun"
+                width={24}
+                height={24}
+                className="w-6 h-6"
+              />
+              <span className="text-lg font-semibold">dice.fun</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Professional live streaming platform built on Kadena blockchain technology.
+              Decentralized streaming platform where creators actually win. 0.5% fees, instant payments, Filecoin storage.
             </p>
           </div>
 
@@ -81,7 +86,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 KadeLive. Built on Kadena blockchain technology.</p>
+          <p>&copy; 2024 dice.fun. Built by creators, for creators. No VCs, no corporate BS. 🎲</p>
         </div>
       </div>
     </footer>

@@ -266,6 +266,8 @@ export default function ProfilePage() {
 
                         <div className="text-xs text-gray-400">
                           Max 5MB • Images stored permanently on Filecoin
+                          <br />
+                          <span className="text-blue-600">ℹ️ Uses Filecoin Calibration testnet (independent of Kadena wallet)</span>
                         </div>
                       </div>
                     </div>

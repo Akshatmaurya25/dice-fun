@@ -59,6 +59,8 @@ dice.fun is a **decentralized streaming platform** built on Kadena blockchain th
 - **Decentralized redundancy**: Files stored across multiple Filecoin storage providers
 - **Censorship resistance**: No single entity can delete your content
 - **Provable storage**: Cryptographic proofs ensure your files are actually stored
+- **Dual Network Architecture**: Payments on Kadena, storage on Filecoin (best of both worlds)
+- **Demo Ready**: Uses Filecoin Calibration testnet for seamless testing
 
 ## 📊 Contract Addresses
 

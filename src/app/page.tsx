@@ -60,12 +60,12 @@ export default function Home() {
 
         <div className="relative z-10 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Professional Live Streaming
-            <span className="block text-primary">Built on Kadena</span>
+            Where Creators
+            <span className="block text-primary">Actually Win 🎲</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Experience decentralized streaming with enterprise-grade quality.
-            Connect with creators, monetize content, and build communities on blockchain technology.
+            Decentralized streaming platform with 0.5% fees, instant KDA payments, and Filecoin storage.
+            No barriers, no BS. Start earning from day one.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -102,18 +102,18 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-16">
         <h2 className="text-3xl font-bold text-center mb-12">
-          Why Choose KadeLive?
+          What Makes Us Different?
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Card>
             <CardContent className="p-6 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🔒</span>
+                <span className="text-2xl">💰</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Decentralized</h3>
+              <h3 className="text-xl font-semibold mb-2">Keep Your Bag</h3>
               <p className="text-muted-foreground">
-                Built on Kadena blockchain for true ownership and censorship resistance.
+                0.5% platform fee vs 45% on traditional platforms. We let you keep your money.
               </p>
             </CardContent>
           </Card>
@@ -123,9 +123,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">⚡</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Fast Payments</h3>
+              <h3 className="text-xl font-semibold mb-2">Instant Everything</h3>
               <p className="text-muted-foreground">
-                Instant tips and monetization through Polygon network integration.
+                Start earning from day one. Instant KDA payments. No 1000+ subscriber barriers.
               </p>
             </CardContent>
           </Card>
@@ -133,11 +133,11 @@ export default function Home() {
           <Card>
             <CardContent className="p-6 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🏢</span>
+                <span className="text-2xl">🌍</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Enterprise Grade</h3>
+              <h3 className="text-xl font-semibold mb-2">Own Your Content</h3>
               <p className="text-muted-foreground">
-                Professional quality streaming with Self Protocol verification.
+                Filecoin storage means your content lives forever. No platform can delete it.
               </p>
             </CardContent>
           </Card>

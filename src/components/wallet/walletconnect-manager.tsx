@@ -60,9 +60,9 @@ export function WalletConnectManager() {
                 Ready
               </Badge>
             )}
-            {sessions.length > 0 && (
+            {sessions?.length > 0 && (
               <Badge variant="outline" className="text-xs">
-                {sessions.length} connected
+                {sessions?.length} connected
               </Badge>
             )}
           </div>
@@ -102,7 +102,7 @@ export function WalletConnectManager() {
             </div>
 
             {/* Active Sessions */}
-            {sessions.length > 0 ? (
+            {sessions?.length > 0 ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-sm">Connected dApps</h4>

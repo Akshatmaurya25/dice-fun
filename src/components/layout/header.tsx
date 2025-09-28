@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useWalletConnect } from "@/hooks/useWalletConnect"
@@ -34,11 +35,15 @@ export function Header() {
     <header className="border-b bg-background">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <div className="w-6 h-6 bg-white rounded-sm"></div>
-          </div>
-          <span className="text-xl font-bold text-foreground">KadeLive</span>
+        <Link href="/" className="flex items-center space-x-3">
+          <Image
+            src="/logo.svg"
+            alt="dice.fun"
+            width={32}
+            height={32}
+            className="w-8 h-8"
+          />
+          <span className="text-xl font-bold text-foreground">dice.fun</span>
         </Link>
 
         {/* Navigation */}

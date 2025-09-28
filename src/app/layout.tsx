@@ -10,9 +10,45 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "KadeLive - Decentralized Streaming Platform",
+  title: "dice.fun - Where Creators Actually Win",
   description:
-    "Professional live streaming platform built on Kadena blockchain technology",
+    "Decentralized streaming platform built on Kadena blockchain. 0.5% fees, instant payments, Filecoin storage. No barriers, no BS.",
+  keywords: [
+    "dice.fun",
+    "streaming platform",
+    "Kadena blockchain",
+    "decentralized",
+    "creator economy",
+    "Web3",
+    "zero gas fees",
+    "instant payments",
+    "Filecoin storage"
+  ],
+  authors: [{ name: "dice.fun team" }],
+  creator: "dice.fun",
+  publisher: "dice.fun",
+  openGraph: {
+    title: "dice.fun - Where Creators Actually Win",
+    description: "Decentralized streaming platform with 0.5% fees, instant payments, and Filecoin storage",
+    siteName: "dice.fun",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "dice.fun - Where Creators Actually Win",
+    description: "Decentralized streaming platform with 0.5% fees, instant payments, and Filecoin storage",
+    creator: "@dicefun_xyz",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
