@@ -23,7 +23,8 @@
       "Bash(forge:*)",
       "Bash(source:*)",
       "Bash(npx next:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(vercel:*)"
     ],
     "deny": [],
     "ask": []
