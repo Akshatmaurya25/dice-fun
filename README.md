@@ -1,6 +1,6 @@
 # 🎲 dice.fun - Where Creators Actually Win
 
-*Because traditional streaming platforms? Nah, we don't do that here.*
+_Because traditional streaming platforms? Nah, we don't do that here._
 
 ## What's This About?
 
@@ -8,13 +8,13 @@ dice.fun is a **decentralized streaming platform** built on Kadena blockchain th
 
 ### Traditional Platforms vs Us (The Real Talk)
 
-| **Old School Platforms** | **dice.fun** | **So What?** |
-|---------------------------|--------------|--------------|
-| 45% revenue cut (YouTube/Twitch) | 0.5% fee | **We let you keep your bag** 💰 |
-| 1000+ subs to monetize | Instant monetization | **Zero barriers to entry** |
-| 30-60 days to get paid | Instant settlements | **Your money, right now** ⚡ |
-| Complex verification | Self ZK verification | **Privacy meets simplicity** |
-| Centralized control | Decentralized freedom | **Your content, your rules** |
+| **Old School Platforms**         | **dice.fun**          | **So What?**                    |
+| -------------------------------- | --------------------- | ------------------------------- |
+| 45% revenue cut (YouTube/Twitch) | 0.5% fee              | **We let you keep your bag** 💰 |
+| 1000+ subs to monetize           | Instant monetization  | **Zero barriers to entry**      |
+| 30-60 days to get paid           | Instant settlements   | **Your money, right now** ⚡    |
+| Complex verification             | Self ZK verification  | **Privacy meets simplicity**    |
+| Centralized control              | Decentralized freedom | **Your content, your rules**    |
 
 ## Why Kadena? (Smart Choice, Tbh)
 
@@ -27,6 +27,7 @@ dice.fun is a **decentralized streaming platform** built on Kadena blockchain th
 ## 🚀 Features That Actually Matter
 
 ### For Creators
+
 - **Instant Monetization**: No subscriber thresholds, no waiting periods
 - **Real-Time Tips**: KDA donations hit your wallet immediately
 - **Self Protocol Integration**: ZK-powered identity verification (privacy-first)
@@ -36,6 +37,7 @@ dice.fun is a **decentralized streaming platform** built on Kadena blockchain th
 - **Zero Vendor Lock-in**: Own your content with unique PieceCIDs for every upload
 
 ### For Viewers
+
 - **Direct Creator Support**: Your tips go straight to creators (no middleman)
 - **Privacy-First**: Watch without surveillance capitalism
 - **Cross-Platform**: Works everywhere MetaMask does
@@ -52,6 +54,7 @@ dice.fun is a **decentralized streaming platform** built on Kadena blockchain th
 - **Smart Contracts**: Kadena native contracts
 
 ### **Filecoin Integration Deep Dive**
+
 - **Every upload gets a PieceCID**: Permanent, content-addressed identifiers
 - **Decentralized redundancy**: Files stored across multiple Filecoin storage providers
 - **Censorship resistance**: No single entity can delete your content
@@ -60,18 +63,20 @@ dice.fun is a **decentralized streaming platform** built on Kadena blockchain th
 ## 📊 Contract Addresses
 
 ### Kadena Chainweb EVM Testnet (Chain ID: 5920)
+
 - **Network**: Kadena Chainweb EVM Testnet 20
 - **RPC**: `https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc`
 - **Explorer**: [Kadena Blockscout](http://chain-20.evm-testnet-blockscout.chainweb.com)
 - **Currency**: KDA
 
-*Smart contract addresses will be updated here post-deployment*
+_Smart contract addresses will be updated here post-deployment_
 
 ## 🎯 Our Mission
 
 **Empowering creators without the corporate BS.**
 
 We're building for:
+
 - **Micro-influencers** who deserve better than scraps
 - **New creators** who shouldn't wait for platform approval
 - **Privacy-conscious users** tired of being the product
@@ -80,15 +85,18 @@ We're building for:
 ## 🔥 What Makes Us Different
 
 ### Revenue Model: Actually Fair
+
 - **Us**: 0.5% platform fee (just enough to keep the lights on)
 - **Them**: 30-45% because... corporate greed?
 
 ### Instant Everything
+
 - **Monetization**: Start earning from day one
 - **Payments**: Real-time KDA transfers
 - **Verification**: Self-prove your identity with ZK tech
 
 ### Decentralized by Design
+
 - **Content**: Stored on Filecoin (censorship-resistant)
 - **Payments**: Direct creator-to-fan transfers
 - **Identity**: Self-sovereign with Self Protocol
@@ -133,4 +141,4 @@ MIT License - Because we believe in open innovation.
 
 **Built by creators, for creators. No VCs, no corporate overlords, just pure creator economy vibes.**
 
-*"That's how we roll at dice.fun" 🎲*
+_"That's how we roll at dice.fun" 🎲_

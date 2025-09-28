@@ -17,8 +17,11 @@
       "Bash(pact:*)",
       "Bash(node:*)",
       "Bash(npx hardhat:*)",
-      "Bash(npm run compile:*)",
-      "Bash(npm run deploy:kadena:*)"
+      "Bash(rm:*)",
+      "Bash(forge init:*)",
+      "Bash(forge install:*)",
+      "Bash(forge:*)",
+      "Bash(source:*)"
     ],
     "deny": [],
     "ask": []

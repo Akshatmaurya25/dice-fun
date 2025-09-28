@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, QrCode } from "lucide-react";
-import {
-  // SelfVerificationQR,
-  VerificationStatusCard,
+import { countries } from "@selfxyz/qrcode";
+import { 
+  SelfVerificationQR, 
+  VerificationStatusCard, 
   type VerificationStatus,
   type VerificationResult
 } from "@/components/verification";
+import { APITest } from "@/components/test/api-test";
 
 export default function VerifyPage() {
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('idle');
@@ -77,7 +79,7 @@ export default function VerifyPage() {
                   minimumAge: 18,
                   nationality: true,
                   gender: true,
-                  excludedCountries: ["IRN", "PRK", "RUS", "SYR"],
+                  excludedCountries: [countries.CUBA, countries.IRAN, countries.NORTH_KOREA, countries.RUSSIA],
                   ofac: true,
                 }}
                 onSuccess={handleSuccessfulVerification}
@@ -136,6 +138,11 @@ export default function VerifyPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Debug: API Test Component */}
+        <div className="mt-8">
+          <APITest />
+        </div>
       </div>
     </div>
   );

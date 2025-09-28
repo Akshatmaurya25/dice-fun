@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+<<<<<<< HEAD:contracts/DiceTipping.sol
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+=======
+import "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
+import "openzeppelin-contracts/contracts/access/Ownable.sol";
+import "openzeppelin-contracts/contracts/security/Pausable.sol";
+>>>>>>> 9d979e40c7313adf94677b4901e241d2d1c16d94:foundry/src/DiceTipping.sol
 
 /**
  * @title DiceTipping
@@ -56,7 +62,11 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         string streamId;
     }
 
+<<<<<<< HEAD:contracts/DiceTipping.sol
     struct DonationInfo {
+=======
+    struct DonationRecord {
+>>>>>>> 9d979e40c7313adf94677b4901e241d2d1c16d94:foundry/src/DiceTipping.sol
         address from;
         address to;
         uint256 amount;
@@ -76,7 +86,11 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
 
     // State variables
     mapping(bytes32 => Tip) public tips;
+<<<<<<< HEAD:contracts/DiceTipping.sol
     mapping(bytes32 => DonationInfo) public donations;
+=======
+    mapping(bytes32 => DonationRecord) public donations;
+>>>>>>> 9d979e40c7313adf94677b4901e241d2d1c16d94:foundry/src/DiceTipping.sol
     mapping(address => UserStats) public userStats;
     mapping(string => bytes32[]) public streamTips; // streamId => tipIds
 
@@ -90,6 +104,14 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
     uint256 public minimumTipAmount = 0.001 ether;
     uint256 public minimumDonationAmount = 0.001 ether;
 
+    // Add maximum limits to prevent DOS attacks
+    uint256 public constant MAX_MESSAGE_LENGTH = 500;
+    uint256 public constant MAX_PURPOSE_LENGTH = 200;
+    uint256 public constant MAX_STREAM_ID_LENGTH = 100;
+
+    // Add nonce to prevent replay attacks and improve uniqueness
+    uint256 private nonce;
+
     // Modifiers
     modifier validAddress(address _addr) {
         require(_addr != address(0), "Invalid address");
@@ -99,10 +121,22 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
 
     modifier validAmount(uint256 _amount, uint256 _minimum) {
         require(_amount >= _minimum, "Amount below minimum");
+        require(_amount <= type(uint256).max / 10000, "Amount too large"); // Prevent overflow in fee calculation
         _;
     }
 
+<<<<<<< HEAD:contracts/DiceTipping.sol
     constructor() Ownable(msg.sender) {}
+=======
+    modifier validString(string calldata _str, uint256 _maxLength) {
+        require(bytes(_str).length <= _maxLength, "String too long");
+        _;
+    }
+
+    constructor() Ownable() {
+    _transferOwnership(msg.sender);
+}
+>>>>>>> 9d979e40c7313adf94677b4901e241d2d1c16d94:foundry/src/DiceTipping.sol
 
     /**
      * @dev Send a tip to another user
@@ -119,17 +153,29 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         whenNotPaused
         validAddress(_to)
         validAmount(msg.value, minimumTipAmount)
+        validString(_message, MAX_MESSAGE_LENGTH)
     {
-        uint256 fee = (msg.value * platformFeePercentage) / 10000;
-        uint256 netAmount = msg.value - fee;
+        bytes32 tipId = _processTip(_to, _message);
+        _finalizeTip(_to, tipId);
+    }
 
+    /**
+     * @dev Internal function to process tip creation
+     */
+    function _processTip(
+        address _to,
+        string calldata _message
+    ) internal returns (bytes32) {
         bytes32 tipId = keccak256(abi.encodePacked(
             msg.sender,
             _to,
             msg.value,
             block.timestamp,
-            allTipIds.length
+            block.number,
+            nonce++
         ));
+
+        require(tips[tipId].from == address(0), "Tip ID collision");
 
         tips[tipId] = Tip({
             from: msg.sender,
@@ -142,19 +188,35 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         });
 
         allTipIds.push(tipId);
+        return tipId;
+    }
 
-        // Update user statistics
-        userStats[msg.sender].totalTipsSent += msg.value;
-        userStats[msg.sender].tipCount++;
-        userStats[_to].totalTipsReceived += msg.value;
+    /**
+     * @dev Internal function to finalize tip
+     */
+    function _finalizeTip(address _to, bytes32 tipId) internal {
+        _updateTipStats(msg.sender, _to, msg.value);
 
+        uint256 fee = (msg.value * platformFeePercentage) / 10000;
         totalFeesCollected += fee;
 
-        // Transfer the net amount to recipient
-        (bool success, ) = payable(_to).call{value: netAmount}("");
+        (bool success, ) = payable(_to).call{value: msg.value - fee}("");
         require(success, "Transfer failed");
 
-        emit TipSent(msg.sender, _to, msg.value, _message, block.timestamp, tipId);
+        Tip storage tip = tips[tipId];
+        emit TipSent(msg.sender, _to, msg.value, tip.message, block.timestamp, tipId);
+    }
+
+    /**
+     * @dev Internal function to update tip statistics
+     * @param _sender Sender address
+     * @param _recipient Recipient address
+     * @param _amount Tip amount
+     */
+    function _updateTipStats(address _sender, address _recipient, uint256 _amount) internal {
+        userStats[_sender].totalTipsSent += _amount;
+        userStats[_sender].tipCount += 1;
+        userStats[_recipient].totalTipsReceived += _amount;
     }
 
     /**
@@ -174,20 +236,34 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         whenNotPaused
         validAddress(_streamer)
         validAmount(msg.value, minimumTipAmount)
+        validString(_streamId, MAX_STREAM_ID_LENGTH)
+        validString(_message, MAX_MESSAGE_LENGTH)
     {
         require(bytes(_streamId).length > 0, "Invalid stream ID");
 
-        uint256 fee = (msg.value * platformFeePercentage) / 10000;
-        uint256 netAmount = msg.value - fee;
+        bytes32 tipId = _processStreamTip(_streamer, _streamId, _message);
+        _finalizeStreamTip(_streamer, tipId);
+    }
 
+    /**
+     * @dev Internal function to process stream tip creation
+     */
+    function _processStreamTip(
+        address _streamer,
+        string calldata _streamId,
+        string calldata _message
+    ) internal returns (bytes32) {
         bytes32 tipId = keccak256(abi.encodePacked(
             msg.sender,
             _streamer,
             _streamId,
             msg.value,
             block.timestamp,
-            allTipIds.length
+            block.number,
+            nonce++
         ));
+
+        require(tips[tipId].from == address(0), "Tip ID collision");
 
         tips[tipId] = Tip({
             from: msg.sender,
@@ -201,19 +277,23 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
 
         allTipIds.push(tipId);
         streamTips[_streamId].push(tipId);
+        return tipId;
+    }
 
-        // Update user statistics
-        userStats[msg.sender].totalTipsSent += msg.value;
-        userStats[msg.sender].tipCount++;
-        userStats[_streamer].totalTipsReceived += msg.value;
+    /**
+     * @dev Internal function to finalize stream tip
+     */
+    function _finalizeStreamTip(address _streamer, bytes32 tipId) internal {
+        _updateTipStats(msg.sender, _streamer, msg.value);
 
+        uint256 fee = (msg.value * platformFeePercentage) / 10000;
         totalFeesCollected += fee;
 
-        // Transfer the net amount to streamer
-        (bool success, ) = payable(_streamer).call{value: netAmount}("");
+        (bool success, ) = payable(_streamer).call{value: msg.value - fee}("");
         require(success, "Transfer failed");
 
-        emit StreamTip(msg.sender, _streamer, _streamId, msg.value, _message, block.timestamp, tipId);
+        Tip storage tip = tips[tipId];
+        emit StreamTip(msg.sender, _streamer, tip.streamId, msg.value, tip.message, block.timestamp, tipId);
     }
 
     /**
@@ -233,22 +313,40 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         whenNotPaused
         validAddress(_to)
         validAmount(msg.value, minimumDonationAmount)
+        validString(_purpose, MAX_PURPOSE_LENGTH)
+        validString(_message, MAX_MESSAGE_LENGTH)
     {
         require(bytes(_purpose).length > 0, "Purpose required");
 
-        uint256 fee = (msg.value * platformFeePercentage) / 10000;
-        uint256 netAmount = msg.value - fee;
+        bytes32 donationId = _processDonation(_to, _purpose, _message);
+        _finalizeDonation(_to, donationId);
+    }
 
+    /**
+     * @dev Internal function to process donation creation
+     */
+    function _processDonation(
+        address _to,
+        string calldata _purpose,
+        string calldata _message
+    ) internal returns (bytes32) {
         bytes32 donationId = keccak256(abi.encodePacked(
             msg.sender,
             _to,
             _purpose,
             msg.value,
             block.timestamp,
-            allDonationIds.length
+            block.number,
+            nonce++
         ));
 
+<<<<<<< HEAD:contracts/DiceTipping.sol
         donations[donationId] = DonationInfo({
+=======
+        require(donations[donationId].from == address(0), "Donation ID collision");
+
+        donations[donationId] = DonationRecord({
+>>>>>>> 9d979e40c7313adf94677b4901e241d2d1c16d94:foundry/src/DiceTipping.sol
             from: msg.sender,
             to: _to,
             amount: msg.value,
@@ -258,19 +356,35 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         });
 
         allDonationIds.push(donationId);
+        return donationId;
+    }
 
-        // Update user statistics
-        userStats[msg.sender].totalDonationsSent += msg.value;
-        userStats[msg.sender].donationCount++;
-        userStats[_to].totalDonationsReceived += msg.value;
+    /**
+     * @dev Internal function to finalize donation
+     */
+    function _finalizeDonation(address _to, bytes32 donationId) internal {
+        _updateDonationStats(msg.sender, _to, msg.value);
 
+        uint256 fee = (msg.value * platformFeePercentage) / 10000;
         totalFeesCollected += fee;
 
-        // Transfer the net amount to recipient
-        (bool success, ) = payable(_to).call{value: netAmount}("");
+        (bool success, ) = payable(_to).call{value: msg.value - fee}("");
         require(success, "Transfer failed");
 
-        emit Donation(msg.sender, _to, msg.value, _purpose, _message, block.timestamp, donationId);
+        DonationRecord storage donation = donations[donationId];
+        emit Donation(msg.sender, _to, msg.value, donation.purpose, donation.message, block.timestamp, donationId);
+    }
+
+    /**
+     * @dev Internal function to update donation statistics
+     * @param _sender Sender address
+     * @param _recipient Recipient address
+     * @param _amount Donation amount
+     */
+    function _updateDonationStats(address _sender, address _recipient, uint256 _amount) internal {
+        userStats[_sender].totalDonationsSent += _amount;
+        userStats[_sender].donationCount += 1;
+        userStats[_recipient].totalDonationsReceived += _amount;
     }
 
     // View functions
@@ -279,10 +393,12 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
     }
 
     function getStreamTips(string calldata _streamId) external view returns (bytes32[] memory) {
+        require(bytes(_streamId).length <= MAX_STREAM_ID_LENGTH, "Stream ID too long");
         return streamTips[_streamId];
     }
 
     function getStreamTipCount(string calldata _streamId) external view returns (uint256) {
+        require(bytes(_streamId).length <= MAX_STREAM_ID_LENGTH, "Stream ID too long");
         return streamTips[_streamId].length;
     }
 
@@ -296,7 +412,12 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
 
     function getRecentTips(uint256 _limit) external view returns (bytes32[] memory) {
         uint256 length = allTipIds.length;
+        if (length == 0) return new bytes32[](0);
+
         uint256 limit = _limit > length ? length : _limit;
+        // Add reasonable limit to prevent gas issues
+        if (limit > 100) limit = 100;
+
         bytes32[] memory recentTips = new bytes32[](limit);
 
         for (uint256 i = 0; i < limit; i++) {
@@ -308,7 +429,12 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
 
     function getRecentDonations(uint256 _limit) external view returns (bytes32[] memory) {
         uint256 length = allDonationIds.length;
+        if (length == 0) return new bytes32[](0);
+
         uint256 limit = _limit > length ? length : _limit;
+        // Add reasonable limit to prevent gas issues
+        if (limit > 100) limit = 100;
+
         bytes32[] memory recentDonations = new bytes32[](limit);
 
         for (uint256 i = 0; i < limit; i++) {
@@ -326,11 +452,13 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
     }
 
     function setMinimumAmounts(uint256 _tipAmount, uint256 _donationAmount) external onlyOwner {
+        require(_tipAmount > 0, "Tip amount must be positive");
+        require(_donationAmount > 0, "Donation amount must be positive");
         minimumTipAmount = _tipAmount;
         minimumDonationAmount = _donationAmount;
     }
 
-    function withdrawFees() external onlyOwner {
+    function withdrawFees() external onlyOwner nonReentrant {
         uint256 amount = totalFeesCollected;
         require(amount > 0, "No fees to withdraw");
 
@@ -350,8 +478,10 @@ contract DiceTipping is ReentrancyGuard, Ownable, Pausable {
         _unpause();
     }
 
-    // Emergency functions
-    function emergencyWithdraw() external onlyOwner {
+    // Emergency functions - Modified to be more secure
+    function emergencyWithdraw() external onlyOwner nonReentrant {
+        require(paused(), "Contract must be paused for emergency withdrawal");
+
         uint256 balance = address(this).balance;
         require(balance > 0, "No funds to withdraw");
 
