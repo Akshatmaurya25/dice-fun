@@ -129,7 +129,7 @@ export function LiveStreams() {
         ) : (
           <div className="space-y-4">
             {streams.map((stream) => (
-              <div key={stream.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+              <div key={stream.streamKey} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="font-medium text-lg">{stream.title || `Stream ${stream.streamKey.slice(-8)}`}</h3>

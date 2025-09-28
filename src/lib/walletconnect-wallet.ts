@@ -31,9 +31,15 @@ export class WalletConnectWalletService {
   private ethereum: any = null
   private provider: ethers.BrowserProvider | null = null
   private database: DatabaseService
+  private boundAccountsChanged: (accounts: string[]) => void
+  private boundChainChanged: (chainId: string) => void
 
   constructor() {
     this.database = DatabaseService.getInstance()
+
+    // Bind event handlers once to maintain consistent references
+    this.boundAccountsChanged = this.handleAccountsChanged.bind(this)
+    this.boundChainChanged = this.handleChainChanged.bind(this)
   }
 
   static getInstance(): WalletConnectWalletService {
@@ -44,81 +50,173 @@ export class WalletConnectWalletService {
   }
 
   async initialize(): Promise<void> {
-    if (this.walletKit) {
-      this.state.isReady = true
-      this.state.isLoading = false
-      this.notifyListeners()
-      return
-    }
+    console.log('🔄 Initializing wallet service...')
+
+    // Always start with clean state
+    this.state.isLoading = true
+    this.state.isReady = false
+    this.notifyListeners()
 
     try {
-      this.state.isLoading = true
-      this.notifyListeners()
+      // Detect and prioritize MetaMask
+      const preferredWallet = this.detectPreferredWallet()
 
-      // First check if MetaMask is available (this is immediate)
-      if (typeof window !== 'undefined' && window.ethereum) {
-        this.ethereum = window.ethereum
+      if (preferredWallet) {
+        console.log('✅ Wallet detected:', preferredWallet.isMetaMask ? 'MetaMask' : 'Other wallet')
+        this.ethereum = preferredWallet
         this.provider = new ethers.BrowserProvider(this.ethereum)
 
-        // Check if already connected (this is fast)
+        // Check existing connection with timeout
         try {
-          const accounts = await this.ethereum.request({ method: 'eth_accounts' })
-          if (accounts.length > 0) {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Connection check timeout')), 5000)
+          )
+
+          const accountsPromise = this.ethereum.request({ method: 'eth_accounts' })
+          const accounts = await Promise.race([accountsPromise, timeoutPromise]) as string[]
+
+          if (accounts && accounts.length > 0) {
             this.state.address = accounts[0]
-            this.state.chainId = parseInt(await this.ethereum.request({ method: 'eth_chainId' }), 16)
+            const chainId = await this.ethereum.request({ method: 'eth_chainId' })
+            this.state.chainId = parseInt(chainId as string, 16)
             this.state.isConnected = true
+            console.log('✅ Existing wallet connection found:', this.state.address)
+          } else {
+            console.log('ℹ️ No existing wallet connection')
           }
         } catch (err) {
-          console.warn('Failed to check existing connection:', err)
+          console.warn('⚠️ Failed to check existing connection:', err)
+          // Don't fail initialization just because we can't check existing connection
         }
 
-        // Set up MetaMask event listeners immediately
-        this.ethereum.on('accountsChanged', this.handleAccountsChanged.bind(this))
-        this.ethereum.on('chainChanged', this.handleChainChanged.bind(this))
+        // Set up event listeners
+        this.setupWalletEventListeners()
+      } else {
+        console.log('ℹ️ No wallet detected')
       }
 
-      // Set ready state immediately - don't wait for WalletConnect
+      // Always mark as ready regardless of wallet detection
       this.state.isReady = true
       this.state.isLoading = false
       this.notifyListeners()
 
+      console.log('✅ Wallet service initialized successfully')
+
       // Initialize WalletConnect in the background (non-blocking)
-      this.initializeWalletConnectAsync()
+      this.initializeWalletConnectAsync().catch(err =>
+        console.warn('⚠️ WalletConnect initialization failed:', err)
+      )
 
     } catch (error) {
-      console.error('Failed to initialize wallet service:', error)
-      this.state.isReady = true // Still mark as ready even if WalletConnect fails
+      console.error('❌ Failed to initialize wallet service:', error)
+      // Always mark as ready even on error to prevent infinite loading
+      this.state.isReady = true
       this.state.isLoading = false
       this.notifyListeners()
     }
   }
 
+  private detectPreferredWallet(): any {
+    if (typeof window === 'undefined') {
+      console.log('🌐 Window not available (SSR)')
+      return null
+    }
+
+    if (!window.ethereum) {
+      console.log('🚫 No ethereum provider found')
+      return null
+    }
+
+    // Check for MetaMask specifically first
+    if (window.ethereum.isMetaMask) {
+      console.log('🦊 MetaMask detected as primary provider')
+      return window.ethereum
+    }
+
+    // Check for multiple providers
+    if (window.ethereum.providers && Array.isArray(window.ethereum.providers)) {
+      console.log('🔍 Multiple providers detected, looking for MetaMask...')
+      const metamask = window.ethereum.providers.find((provider: any) => provider.isMetaMask)
+      if (metamask) {
+        console.log('🦊 MetaMask found in providers array')
+        return metamask
+      }
+
+      // If no MetaMask, return the first provider
+      console.log('📦 Using first available provider')
+      return window.ethereum.providers[0]
+    }
+
+    // Fallback to general ethereum provider
+    console.log('🔗 Using default ethereum provider')
+    return window.ethereum
+  }
+
+  private setupWalletEventListeners(): void {
+    if (!this.ethereum) return
+
+    try {
+      // Remove existing listeners to prevent duplicates
+      if (this.ethereum.removeListener) {
+        this.ethereum.removeListener('accountsChanged', this.boundAccountsChanged)
+        this.ethereum.removeListener('chainChanged', this.boundChainChanged)
+      }
+
+      // Add new listeners using bound references
+      this.ethereum.on('accountsChanged', this.boundAccountsChanged)
+      this.ethereum.on('chainChanged', this.boundChainChanged)
+      console.log('👂 Wallet event listeners set up')
+    } catch (error) {
+      console.warn('⚠️ Failed to set up wallet event listeners:', error)
+    }
+  }
+
   private async initializeWalletConnectAsync(): Promise<void> {
     try {
-      // Initialize Core
-      this.core = new Core({
-        projectId: "c7bbcb0e4153fb9581712573298cdc67",
-      })
+      console.log('🔄 Initializing WalletConnect...')
 
-      // Initialize WalletKit
-      this.walletKit = await WalletKit.init({
-        core: this.core,
-        metadata: {
-          name: "Dice.fun Wallet",
-          description: "Decentralized gaming and streaming platform wallet",
-          url: "https://dice.fun",
-          icons: ["https://dice.fun/icon.png"],
-        },
-      })
+      // Skip WalletConnect initialization if no project ID
+      const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "c7bbcb0e4153fb9581712573298cdc67"
+      if (!projectId || projectId === 'your-project-id-here') {
+        console.log('⚠️ Skipping WalletConnect: No valid project ID')
+        return
+      }
 
-      // Set up WalletConnect event listeners
-      this.setupWalletConnectEventListeners()
+      // Add timeout for WalletConnect initialization
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('WalletConnect initialization timeout')), 10000)
+      )
 
-      console.log('WalletConnect initialized successfully')
+      const initPromise = (async () => {
+        // Initialize Core
+        this.core = new Core({
+          projectId,
+        })
+
+        // Initialize WalletKit
+        this.walletKit = await WalletKit.init({
+          core: this.core,
+          metadata: {
+            name: "Dice.fun Wallet",
+            description: "Decentralized gaming and streaming platform wallet",
+            url: typeof window !== 'undefined' ? window.location.origin : "https://dice.fun",
+            icons: [`${typeof window !== 'undefined' ? window.location.origin : "https://dice.fun"}/favicon.ico`],
+          },
+        })
+
+        // Set up WalletConnect event listeners
+        this.setupWalletConnectEventListeners()
+      })()
+
+      await Promise.race([initPromise, timeoutPromise])
+
+      console.log('✅ WalletConnect initialized successfully')
 
     } catch (error) {
-      console.error('Failed to initialize WalletConnect (background):', error)
+      console.warn('⚠️ WalletConnect initialization failed (background):', error)
       // Don't throw here - the wallet should still work without WalletConnect
+      this.walletKit = null
+      this.core = null
     }
   }
 
@@ -298,10 +396,22 @@ export class WalletConnectWalletService {
   }
 
   async connectWallet(): Promise<boolean> {
+    console.log('🔗 Attempting to connect wallet...')
+
     try {
+      // Re-detect wallet if not available
       if (!this.ethereum) {
-        alert('MetaMask is not installed. Please install MetaMask to connect.')
-        return false
+        const preferredWallet = this.detectPreferredWallet()
+        if (preferredWallet) {
+          this.ethereum = preferredWallet
+          this.provider = new ethers.BrowserProvider(this.ethereum)
+          this.setupWalletEventListeners()
+        } else {
+          const message = 'No Ethereum wallet detected. Please install MetaMask or another Web3 wallet.'
+          console.error('❌', message)
+          alert(message)
+          return false
+        }
       }
 
       this.state.isLoading = true
@@ -309,22 +419,27 @@ export class WalletConnectWalletService {
 
       // Add timeout to prevent indefinite loading
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Connection timeout')), 30000) // 30 second timeout
+        setTimeout(() => reject(new Error('Connection timeout - Please check your wallet')), 15000) // 15 second timeout
       })
 
       const connectPromise = this.ethereum.request({
         method: 'eth_requestAccounts',
       })
 
-      const accounts = await Promise.race([connectPromise, timeoutPromise])
+      console.log('⏳ Waiting for user approval...')
+      const accounts = await Promise.race([connectPromise, timeoutPromise]) as string[]
 
-      if (accounts.length > 0) {
+      if (accounts && accounts.length > 0) {
         this.state.address = accounts[0]
-        this.state.chainId = parseInt(await this.ethereum.request({ method: 'eth_chainId' }), 16)
+        const chainId = await this.ethereum.request({ method: 'eth_chainId' })
+        this.state.chainId = parseInt(chainId as string, 16)
         this.state.isConnected = true
+
+        console.log('✅ Wallet connected:', this.state.address, 'Chain:', this.state.chainId)
 
         // Switch to Polygon if not already on it
         if (this.state.chainId !== 137) {
+          console.log('🔄 Switching to Polygon...')
           await this.switchToPolygon()
         }
 
@@ -333,12 +448,24 @@ export class WalletConnectWalletService {
         return true
       }
 
+      console.log('❌ No accounts returned')
       this.state.isLoading = false
       this.notifyListeners()
       return false
 
     } catch (error) {
-      console.error('Failed to connect wallet:', error)
+      console.error('❌ Failed to connect wallet:', error)
+
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      if (errorMessage.includes('timeout')) {
+        alert('Connection timeout. Please try again and make sure to approve the connection in your wallet.')
+      } else if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
+        alert('Connection rejected. Please approve the connection in your wallet to continue.')
+      } else {
+        alert(`Failed to connect wallet: ${errorMessage}`)
+      }
+
       this.state.isLoading = false
       this.notifyListeners()
       return false
@@ -346,23 +473,73 @@ export class WalletConnectWalletService {
   }
 
   async disconnectWallet(): Promise<void> {
-    this.state.address = null
-    this.state.isConnected = false
-    this.state.chainId = null
+    console.log('🔌 Disconnecting wallet...')
 
-    // Disconnect all WalletConnect sessions
-    if (this.walletKit) {
-      const sessions = this.walletKit.getActiveSessions()
-      for (const session of Object.values(sessions)) {
-        await this.walletKit.disconnectSession({
-          topic: session.topic,
-          reason: getSdkError("USER_DISCONNECTED"),
-        })
+    try {
+      // Clear internal state first
+      this.state.address = null
+      this.state.isConnected = false
+      this.state.chainId = null
+      this.state.sessions = []
+
+      // Note: We can't actually force disconnect from MetaMask programmatically
+      // MetaMask doesn't provide a disconnect method for security reasons
+      // The user needs to disconnect manually from MetaMask or revoke permissions
+
+      // Disconnect all WalletConnect sessions
+      if (this.walletKit) {
+        try {
+          const sessions = this.walletKit.getActiveSessions()
+          const sessionArray = Object.values(sessions)
+
+          if (sessionArray.length > 0) {
+            console.log(`🔄 Disconnecting ${sessionArray.length} WalletConnect sessions...`)
+
+            for (const session of sessionArray) {
+              await this.walletKit.disconnectSession({
+                topic: session.topic,
+                reason: getSdkError("USER_DISCONNECTED"),
+              })
+            }
+            console.log('✅ WalletConnect sessions disconnected')
+          }
+        } catch (wcError) {
+          console.warn('⚠️ Failed to disconnect WalletConnect sessions:', wcError)
+        }
       }
-    }
 
-    this.state.sessions = []
-    this.notifyListeners()
+      // Remove event listeners to prevent memory leaks
+      if (this.ethereum && this.ethereum.removeListener) {
+        try {
+          this.ethereum.removeListener('accountsChanged', this.boundAccountsChanged)
+          this.ethereum.removeListener('chainChanged', this.boundChainChanged)
+          console.log('🧹 Event listeners removed')
+        } catch (error) {
+          console.warn('⚠️ Failed to remove event listeners:', error)
+        }
+      }
+
+      // Clear provider references
+      this.provider = null
+
+      // Notify listeners of state change
+      this.notifyListeners()
+
+      console.log('✅ Wallet disconnected successfully')
+
+      // Note: For full disconnection, user needs to manually disconnect from MetaMask
+      // This is by design for security reasons
+
+    } catch (error) {
+      console.error('❌ Failed to disconnect wallet:', error)
+
+      // Still update state even if there were errors
+      this.state.address = null
+      this.state.isConnected = false
+      this.state.chainId = null
+      this.state.sessions = []
+      this.notifyListeners()
+    }
   }
 
   async switchToPolygon(): Promise<boolean> {

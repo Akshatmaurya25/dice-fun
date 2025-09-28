@@ -11,7 +11,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "KadeLive - Decentralized Streaming Platform",
-  description: "Professional live streaming platform built on Kadena blockchain technology",
+  description:
+    "Professional live streaming platform built on Kadena blockchain technology",
 };
 
 export default function RootLayout({
@@ -25,10 +26,8 @@ export default function RootLayout({
         className={`${inter.variable} antialiased min-h-screen flex flex-col`}
       >
         <Header />
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <main className="flex-1">{children}</main>
+        <Footer />{" "}
       </body>
     </html>
   );

@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, QrCode } from "lucide-react";
-import { 
-  SelfVerificationQR, 
-  VerificationStatusCard, 
+import {
+  // SelfVerificationQR,
+  VerificationStatusCard,
   type VerificationStatus,
-  type VerificationResult 
+  type VerificationResult
 } from "@/components/verification";
 
 export default function VerifyPage() {
@@ -62,7 +62,14 @@ export default function VerifyPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
-              <SelfVerificationQR
+              <div className="flex items-center justify-center w-64 h-64 bg-gray-100 rounded-lg">
+                <div className="text-center space-y-2">
+                  <QrCode className="h-8 w-8 text-gray-400 mx-auto" />
+                  <p className="text-sm text-gray-600">Verification temporarily disabled</p>
+                  <p className="text-xs text-gray-500">Self dependencies need to be installed</p>
+                </div>
+              </div>
+              {/* <SelfVerificationQR
                 appName="Dice Fun - Identity Verification"
                 scope="dice-fun-app"
                 userDefinedData="Dice Fun Identity Verification"
@@ -76,7 +83,7 @@ export default function VerifyPage() {
                 onSuccess={handleSuccessfulVerification}
                 onError={handleVerificationError}
                 className="w-full"
-              />
+              /> */}
             </CardContent>
           </Card>
 

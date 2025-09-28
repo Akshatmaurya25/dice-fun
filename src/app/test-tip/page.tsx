@@ -201,8 +201,6 @@ export default function TestTipPage() {
             )}
           </CardContent>
         </Card>
-
-          </Card>
         )}
 
         {/* Modal Test */}

@@ -124,6 +124,10 @@ export function useDiceTipping() {
 
   const switchToKadenaNetwork = async () => {
     try {
+      if (!window.ethereum) {
+        throw new Error('No Ethereum provider found');
+      }
+
       const kadenaNetwork = KADENA_EVM_NETWORKS.testnet;
 
       await window.ethereum.request({

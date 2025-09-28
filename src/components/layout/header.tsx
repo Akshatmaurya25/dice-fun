@@ -98,7 +98,7 @@ export function Header() {
                     {walletCount} wallets
                   </Badge>
                 )}
-                {sessions.length > 0 && (
+                {sessions?.length > 0 && (
                   <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200">
                     🔗 {sessions.length} dApp{sessions.length !== 1 ? 's' : ''}
                   </Badge>

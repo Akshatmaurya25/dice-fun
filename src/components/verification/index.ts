@@ -1,4 +1,4 @@
-export { SelfVerificationQR } from './self-verification-qr';
+// export { SelfVerificationQR } from './self-verification-qr';
 export { VerificationStatusCard, type VerificationStatus } from './verification-status-card';
 export type {
   CredentialSubject,

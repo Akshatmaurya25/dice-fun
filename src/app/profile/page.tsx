@@ -6,21 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useWalletConnect } from "@/hooks/useWalletConnect"
+import { FilecoinStorageService } from "@/lib/filecoin-storage"
 
-// Mock user data
+// Akshat Maurya (akku dev) Profile Data
 const userData = {
-  name: "CryptoDev",
-  ensName: "cryptodev.kda",
-  address: "0x1234567890abcdef1234567890abcdef12345678",
-  email: "cryptodev@example.com",
-  bio: "Passionate blockchain developer building the future of DeFi on Kadena. Streaming educational content about smart contracts, security, and Web3 development.",
+  name: "Akshat Maurya",
+  nickname: "akku dev",
+  ensName: "akkudev.eth",
+  address: "0xA15h47M4uRy421337890abcdef1234567890abcdef",
+  email: "akku.dev@protonmail.com",
+  bio: "Full-stack developer & blockchain enthusiast 🚀 Building next-gen DeFi platforms on Kadena. Passionate about Web3, smart contracts, and creating innovative decentralized solutions. Streaming coding sessions, tech tutorials, and crypto insights.",
   avatar: "",
   isVerified: true,
   selfProtocolStatus: "verified",
   socialLinks: {
-    twitter: "@cryptodev_kda",
-    github: "cryptodev",
-    website: "https://cryptodev.kda",
+    twitter: "@akku_dev",
+    github: "akkudev",
+    website: "https://akkudev.xyz",
   },
   preferences: {
     emailNotifications: true,
@@ -48,6 +51,86 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile")
   const [profile, setProfile] = useState(userData)
   const [isEditing, setIsEditing] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarPieceCid, setAvatarPieceCid] = useState<string | null>(null)
+  const [avatarUploadProgress, setAvatarUploadProgress] = useState<string>("")
+  const wallet = useWalletConnect()
+
+  const handleSwitchToKadena = async () => {
+    if (wallet.switchToKadena) {
+      try {
+        const success = await wallet.switchToKadena()
+        if (success) {
+          alert('✅ Successfully switched to Kadena Chainweb EVM Testnet!')
+        } else {
+          alert('❌ Failed to switch to Kadena network')
+        }
+      } catch (error) {
+        console.error('Failed to switch network:', error)
+        alert('❌ Error switching to Kadena network')
+      }
+    }
+  }
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB for profile pics)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be smaller than 5MB')
+      return
+    }
+
+    try {
+      setIsUploadingAvatar(true)
+      setAvatarUploadProgress("Initializing Filecoin storage...")
+
+      const storageService = FilecoinStorageService.getInstance()
+
+      setAvatarUploadProgress("Converting image to upload format...")
+      const fileData = await FilecoinStorageService.fileToUint8Array(file)
+
+      setAvatarUploadProgress("Uploading to Filecoin network...")
+      const result = await storageService.uploadFile(fileData, file.name)
+
+      if (result.success) {
+        setAvatarPieceCid(result.pieceCid)
+        setAvatarUploadProgress(`✅ Uploaded to Filecoin! PieceCID: ${result.pieceCid.slice(0, 25)}...`)
+
+        // Update profile with new avatar
+        setProfile(prev => ({
+          ...prev,
+          avatar: result.pieceCid
+        }))
+
+        console.log(`🌍 Profile picture stored on Filecoin with PieceCID: ${result.pieceCid}`)
+
+        // Show success message
+        setTimeout(() => {
+          alert(`✅ Profile picture uploaded to Filecoin!\n\nPieceCID: ${result.pieceCid}\n\nYour image is now permanently stored on the decentralized network!`)
+        }, 1000)
+
+      } else {
+        setAvatarUploadProgress(`❌ Upload failed: ${result.error}`)
+        console.error('Filecoin avatar upload failed:', result.error)
+      }
+
+    } catch (error: any) {
+      setAvatarUploadProgress(`❌ Upload error: ${error.message}`)
+      console.error('Avatar upload error:', error)
+    } finally {
+      setIsUploadingAvatar(false)
+      // Clear progress after 5 seconds
+      setTimeout(() => setAvatarUploadProgress(""), 5000)
+    }
+  }
 
   const handleSaveProfile = () => {
     // Save profile logic would go here
@@ -112,16 +195,79 @@ export default function ProfilePage() {
                 <CardContent className="space-y-6">
                   {/* Avatar */}
                   <div className="flex items-center space-x-4">
-                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-bold text-primary">
-                        {profile.name[0]}
-                      </span>
+                    <div className="relative">
+                      <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                        {profile.avatar && avatarPieceCid ? (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-xs text-gray-600">Filecoin Image</span>
+                          </div>
+                        ) : (
+                          <span className="text-2xl font-bold text-primary">
+                            {profile.name[0]}{profile.name.split(' ')[1]?.[0] || ''}
+                          </span>
+                        )}
+                      </div>
+
+                      {avatarPieceCid && (
+                        <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                          🌍
+                        </div>
+                      )}
+
+                      {isUploadingAvatar && (
+                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                        </div>
+                      )}
                     </div>
-                    {isEditing && (
-                      <Button variant="outline" size="sm">
-                        Change Avatar
-                      </Button>
-                    )}
+                    <div className="flex-1">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <label htmlFor="avatar-upload">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="cursor-pointer"
+                              disabled={isUploadingAvatar}
+                              asChild
+                            >
+                              <span>
+                                {isUploadingAvatar ? 'Uploading...' : '🌍 Upload to Filecoin'}
+                              </span>
+                            </Button>
+                          </label>
+                          <input
+                            id="avatar-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                            disabled={isUploadingAvatar}
+                          />
+                          {avatarPieceCid && (
+                            <Badge className="bg-green-500 hover:bg-green-600 text-xs">
+                              Stored on Filecoin
+                            </Badge>
+                          )}
+                        </div>
+
+                        {avatarUploadProgress && (
+                          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                            {avatarUploadProgress}
+                          </div>
+                        )}
+
+                        {avatarPieceCid && (
+                          <div className="text-xs text-gray-500">
+                            <strong>PieceCID:</strong> {avatarPieceCid.slice(0, 30)}...
+                          </div>
+                        )}
+
+                        <div className="text-xs text-gray-400">
+                          Max 5MB • Images stored permanently on Filecoin
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Basic Info */}
@@ -136,7 +282,10 @@ export default function ProfilePage() {
                           onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                         />
                       ) : (
-                        <p className="text-sm bg-muted p-2 rounded">{profile.name}</p>
+                        <div className="text-sm bg-muted p-2 rounded">
+                          <div className="font-medium">{profile.name}</div>
+                          <div className="text-xs text-muted-foreground">aka "{profile.nickname}"</div>
+                        </div>
                       )}
                     </div>
 
@@ -255,16 +404,20 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">1,250</div>
+                    <div className="text-2xl font-bold text-primary">3,247</div>
                     <div className="text-sm text-muted-foreground">Followers</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">45</div>
+                    <div className="text-2xl font-bold text-primary">87</div>
                     <div className="text-sm text-muted-foreground">Total Streams</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">234.56</div>
+                    <div className="text-2xl font-bold text-primary">542.89</div>
                     <div className="text-sm text-muted-foreground">MATIC Earned</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">156</div>
+                    <div className="text-sm text-muted-foreground">Hours Streamed</div>
                   </div>
                 </CardContent>
               </Card>
@@ -363,21 +516,42 @@ export default function ProfilePage() {
                 </div>
               ))}
 
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">Connect New Wallet</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleConnectWallet("MetaMask")}
-                  >
-                    Connect MetaMask
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleConnectWallet("WalletConnect")}
-                  >
-                    Connect WalletConnect
-                  </Button>
+              <div className="border-t pt-4 space-y-4">
+                <div>
+                  <h4 className="font-medium mb-3">Network Settings</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Button
+                      onClick={handleSwitchToKadena}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    >
+                      🔗 Switch to Kadena Testnet
+                    </Button>
+                    <div className="flex items-center justify-center text-sm text-muted-foreground">
+                      {wallet.chainId === 5920 ? (
+                        <span className="text-green-600">✅ Connected to Kadena</span>
+                      ) : (
+                        <span className="text-orange-600">⚠️ Not on Kadena network</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-3">Connect New Wallet</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleConnectWallet("MetaMask")}
+                    >
+                      Connect MetaMask
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleConnectWallet("WalletConnect")}
+                    >
+                      Connect WalletConnect
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
